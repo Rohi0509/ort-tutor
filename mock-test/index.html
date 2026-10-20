@@ -1,0 +1,392 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>ORT Mock Test 1</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&family=PT+Sans:wght@400;700&family=PT+Mono&display=swap">
+<style>
+/* Layout: a single answer-sheet column; each question is a row with Cyrillic answer bubbles, a sticky bar carries language, timer and score. */
+:root {
+  --paper: #f7f8f6;
+  --sheet: #ffffff;
+  --ink: #1d2a33;
+  --muted: #5d6b72;
+  --line: #d8dfe0;
+  --accent: #0f6b74;
+  --accent-soft: #dcefef;
+  --good: #23784a;
+  --good-soft: #def2e5;
+  --bad: #b23a2e;
+  --bad-soft: #f8e1dd;
+  --f-display: "PT Serif", Georgia, "Times New Roman", serif;
+  --f-body: "PT Sans", "Segoe UI", Arial, sans-serif;
+  --f-mono: "PT Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #121a1e; --sheet: #182227; --ink: #e3eaec; --muted: #94a3a9; --line: #2c3a40;
+  --accent: #5cc3c9; --accent-soft: #19393c; --good: #6fd29a; --good-soft: #17332a; --bad: #f08b7e; --bad-soft: #3c201d;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #121a1e; --sheet: #182227; --ink: #e3eaec; --muted: #94a3a9; --line: #2c3a40;
+  --accent: #5cc3c9; --accent-soft: #19393c; --good: #6fd29a; --good-soft: #17332a; --bad: #f08b7e; --bad-soft: #3c201d;
+  color-scheme: dark }
+
+body { background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--sheet); }
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+header.top { padding-block: 32px 20px; display: grid; gap: 8px; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+h1 { font-family: var(--f-display); font-size: clamp(28px, 6vw, 40px); line-height: 1.15; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); margin: 0; max-width: 62ch; }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--sheet); border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-block: 10px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.seg button { border: 0; background: transparent; color: var(--ink); font: 700 14px var(--f-body); padding: 6px 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--sheet); }
+.timer { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 18px; min-width: 5.5ch; }
+.timer.low { color: var(--bad); }
+.btn { border: 1px solid var(--accent); background: transparent; color: var(--accent); font: 700 14px var(--f-body); padding: 7px 14px; border-radius: 8px; cursor: pointer; }
+.btn.primary { background: var(--accent); color: var(--sheet); }
+.btn:focus-visible, .seg button:focus-visible, .bubble input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+.spacer { flex: 1; }
+.progress { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.score { margin-block: 20px 0; padding: 16px; background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; display: grid; gap: 10px; }
+.score h2 { margin: 0; font-family: var(--f-display); font-size: 22px; }
+.score table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+.score td { padding: 4px 0; border-bottom: 1px solid var(--line); }
+.score td:last-child { text-align: right; font-family: var(--f-mono); }
+
+section.part { margin-block: 28px; }
+.part-head { display: grid; gap: 4px; padding-bottom: 10px; border-bottom: 2px solid var(--ink); }
+.part-head h2 { margin: 0; font-family: var(--f-display); font-size: 24px; }
+.part-head p { margin: 0; color: var(--muted); font-size: 15px; }
+.legend { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 2px; font-size: 14px; color: var(--muted); }
+.legend b { color: var(--ink); font-family: var(--f-mono); }
+
+.passage { background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-top: 14px; font-family: var(--f-display); font-size: 17px; line-height: 1.65; }
+.passage p { margin: 0; max-width: 65ch; }
+
+.q { display: grid; grid-template-columns: 2.4em minmax(0, 1fr); gap: 4px 10px; padding-block: 16px; border-bottom: 1px solid var(--line); }
+.q .num { font-family: var(--f-mono); color: var(--muted); padding-top: 2px; }
+.q .body { min-width: 0; display: grid; gap: 10px; }
+.q .stem { margin: 0; }
+.cond { font-size: 15px; color: var(--muted); }
+.cmp { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--sheet); }
+.cmp div { padding: 8px 12px; display: grid; gap: 2px; }
+.cmp div + div { border-left: 1px solid var(--line); }
+.cmp small { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.cmp span { font-family: var(--f-mono); font-size: 17px; }
+.cmp span.text { font-family: var(--f-body); font-size: 15px; }
+.opts { display: grid; gap: 6px; }
+.bubble { display: grid; grid-template-columns: 30px minmax(0, 1fr); align-items: center; gap: 10px; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
+.bubble input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.bubble .dot { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--muted); display: grid; place-items: center; font: 700 13px var(--f-body); color: var(--muted); }
+.bubble input:checked + .dot { background: var(--ink); border-color: var(--ink); color: var(--sheet); }
+.bubble:hover .dot { border-color: var(--accent); }
+.graded .bubble { cursor: default; }
+.bubble.right { background: var(--good-soft); }
+.bubble.right .dot { border-color: var(--good); color: var(--good); }
+.bubble.right input:checked + .dot { background: var(--good); border-color: var(--good); color: var(--sheet); }
+.bubble.wrong { background: var(--bad-soft); }
+.bubble.wrong input:checked + .dot { background: var(--bad); border-color: var(--bad); }
+.why { margin: 0; font-size: 14px; color: var(--muted); border-left: 3px solid var(--line); padding-left: 10px; }
+.mark { font-size: 13px; font-weight: 700; }
+.mark.ok { color: var(--good); } .mark.no { color: var(--bad); }
+
+footer { padding-block: 24px 48px; color: var(--muted); font-size: 14px; }
+footer p { margin: 0 0 6px; max-width: 65ch; }
+@media (max-width: 480px) { .cmp { grid-template-columns: 1fr; } .cmp div + div { border-left: 0; border-top: 1px solid var(--line); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 id="title"></h1>
+    <p class="lede" id="lede"></p>
+  </header>
+</div>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="seg" role="group" aria-label="Language">
+      <button type="button" id="lang-ky" data-lang="ky">Кыргызча</button>
+      <button type="button" id="lang-ru" data-lang="ru">Русский</button>
+    </div>
+    <span class="timer" id="timer" aria-live="off">60:00</span>
+    <button type="button" class="btn" id="timer-btn"></button>
+    <span class="progress" id="progress"></span>
+    <span class="spacer"></span>
+    <button type="button" class="btn primary" id="check-btn"></button>
+    <button type="button" class="btn" id="reset-btn"></button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="score" id="score" hidden></div>
+  <main id="test"></main>
+  <footer>
+    <p id="foot1"></p>
+    <p id="foot2"></p>
+  </footer>
+</div>
+
+<script>
+const UI = {
+  ky: {
+    eyebrow: "ЖРТ · Негизги тест · Сынамык вариант №1",
+    title: "Сынамык тест №1",
+    lede: "Чыныгы ЖРТнын түзүлүшүндөгү 43 тапшырма: математика (эки бөлүк), окшоштуктар, сүйлөмдү толуктоо, окуп түшүнүү жана практикалык грамматика. Жоопторду белгилеп, акырында «Текшерүү» баскычын басыңыз.",
+    start: "Таймерди баштоо", pause: "Тыныгуу", check: "Текшерүү", reset: "Кайра баштоо", resetConfirm: "Чын эле тазалайсызбы?",
+    progress: (a, n) => `Жооп берилди: ${a} / ${n}`,
+    scoreTitle: (s, n) => `Натыйжа: ${s} / ${n}`,
+    total: "Жалпы", correct: "Туура", yourWrong: "Туура эмес. Туура жооп:", blank: "Жооп берилген жок. Туура жооп:",
+    colA: "А мамычасы", colB: "Б мамычасы", passageLabel: "Текст",
+    foot1: "Бул тапшырмалар ЖРТнын форматында даярдалган машыгуу үчүн. Алар ЦООМОнун расмий материалдары эмес.",
+    foot2: "Жоопторуңуз ушул браузерде сакталат."
+  },
+  ru: {
+    eyebrow: "ОРТ · Основной тест · Пробный вариант №1",
+    title: "Пробный тест №1",
+    lede: "43 задания в формате настоящего ОРТ: математика (две части), аналогии, дополнение предложений, чтение и понимание, практическая грамматика. Отмечайте ответы и в конце нажмите «Проверить».",
+    start: "Запустить таймер", pause: "Пауза", check: "Проверить", reset: "Начать заново", resetConfirm: "Точно очистить?",
+    progress: (a, n) => `Отвечено: ${a} / ${n}`,
+    scoreTitle: (s, n) => `Результат: ${s} / ${n}`,
+    total: "Всего", correct: "Верно", yourWrong: "Неверно. Правильный ответ:", blank: "Нет ответа. Правильный ответ:",
+    colA: "Колонка А", colB: "Колонка Б", passageLabel: "Текст",
+    foot1: "Эти задания составлены в формате ОРТ для тренировки. Это не официальные материалы ЦООМО.",
+    foot2: "Ваши ответы сохраняются в этом браузере."
+  }
+};
+const LETTERS = ["А", "Б", "В", "Г", "Д"];
+
+const CMP_OPTS = {
+  ky: ["А мамычасындагы чоңдук чоң", "Б мамычасындагы чоңдук чоң", "Чоңдуктар барабар", "Салыштырууга маалымат жетишсиз"],
+  ru: ["Величина в колонке А больше", "Величина в колонке Б больше", "Величины равны", "Информации недостаточно"]
+};
+
+// Each question: id, stem {ky, ru}, options (array shared, or {ky, ru}), answer index, why {ky, ru}.
+const SECTIONS = [
+  {
+    id: "m1", kind: "cmp",
+    title: { ky: "Математика, 1-бөлүк: салыштыруу", ru: "Математика, часть 1: сравнение" },
+    intro: { ky: "Ар бир тапшырмада эки чоңдук берилген. Аларды салыштырып, төмөнкү төрт жооптун бирин тандаңыз.", ru: "В каждом задании даны две величины. Сравните их и выберите один из четырёх ответов." },
+    items: [
+      { id: "m1-1", a: "3⁴", b: "4³", ans: 0, why: { ky: "3⁴ = 81, 4³ = 64.", ru: "3⁴ = 81, 4³ = 64." } },
+      { id: "m1-2", a: { ky: "80дин 25%ы", ru: "25% от 80" }, b: { ky: "25тин 80%ы", ru: "80% от 25" }, ans: 2, why: { ky: "0,25 · 80 = 20 жана 0,8 · 25 = 20.", ru: "0,25 · 80 = 20 и 0,8 · 25 = 20." } },
+      { id: "m1-3", cond: "x > 0", a: "x", b: "x²", ans: 3, why: { ky: "x = 2 болсо x² чоң, x = 0,5 болсо x чоң, x = 1 болсо барабар.", ru: "При x = 2 больше x², при x = 0,5 больше x, при x = 1 они равны." } },
+      { id: "m1-4", a: "√50", b: "7", ans: 0, why: { ky: "7 = √49, ал эми √50 > √49.", ru: "7 = √49, а √50 > √49." } },
+      { id: "m1-5", cond: "a + b = 10,  a − b = 4", a: "a", b: "2b", ans: 0, why: { ky: "Теңдемелерди кошсок 2a = 14, a = 7, b = 3, 2b = 6.", ru: "Сложив уравнения, 2a = 14, a = 7, b = 3, 2b = 6." } },
+      { id: "m1-6", a: { ky: "Беш бурчтуктун ички бурчтарынын суммасы", ru: "Сумма внутренних углов пятиугольника" }, b: "540°", ans: 2, why: { ky: "180° · (5 − 2) = 540°.", ru: "180° · (5 − 2) = 540°." } },
+      { id: "m1-7", a: "2/3", b: "0,67", ans: 1, why: { ky: "2/3 = 0,666…, бул 0,67ден кичине.", ru: "2/3 = 0,666…, это меньше 0,67." } },
+      { id: "m1-8", cond: { ky: "x — бүтүн сан, 2 < x < 5", ru: "x — целое число, 2 < x < 5" }, a: "x", b: "3", ans: 3, why: { ky: "x = 3 же x = 4 болушу мүмкүн.", ru: "x может быть 3 или 4." } },
+      { id: "m1-9", cond: { ky: "Тик бурчтуктун периметри 20 см", ru: "Периметр прямоугольника равен 20 см" }, a: { ky: "Тик бурчтуктун аянты, см²", ru: "Площадь прямоугольника, см²" }, b: "25", ans: 3, why: { ky: "5 × 5 болсо аянт 25ке барабар, 4 × 6 болсо 24. Аянт 25тен ашпайт, бирок барабар да, кичине да болушу мүмкүн.", ru: "При 5 × 5 площадь равна 25, при 4 × 6 она равна 24. Больше 25 не бывает, но может быть и равна, и меньше." } },
+      { id: "m1-10", a: "(−2)⁵", b: "(−2)⁴", ans: 1, why: { ky: "(−2)⁵ = −32, (−2)⁴ = 16.", ru: "(−2)⁵ = −32, (−2)⁴ = 16." } }
+    ]
+  },
+  {
+    id: "m2", kind: "mc",
+    title: { ky: "Математика, 2-бөлүк", ru: "Математика, часть 2" },
+    intro: { ky: "Ар бир суроого бир туура жоопту тандаңыз.", ru: "Выберите один правильный ответ на каждый вопрос." },
+    items: [
+      { id: "m2-1", stem: { ky: "240тын 15%ы канчага барабар?", ru: "Чему равно 15% от 240?" }, opts: ["24", "32", "36", "40", "48"], ans: 2, why: { ky: "240 · 0,15 = 36.", ru: "240 · 0,15 = 36." } },
+      { id: "m2-2", stem: { ky: "Теңдемени чыгарыңыз: 3x − 7 = 2x + 5", ru: "Решите уравнение: 3x − 7 = 2x + 5" }, opts: ["2", "6", "10", "12", "−2"], ans: 3, why: { ky: "3x − 2x = 5 + 7, x = 12.", ru: "3x − 2x = 5 + 7, x = 12." } },
+      { id: "m2-3", stem: { ky: "Куртка 800 сом турат. 25% арзандатуудан кийин анын баасы канча болот?", ru: "Куртка стоит 800 сомов. Сколько она будет стоить после скидки 25%?" }, opts: ["550 сом", "575 сом", "600 сом", "620 сом", "640 сом"], ans: 2, why: { ky: "800 · 0,75 = 600.", ru: "800 · 0,75 = 600." } },
+      { id: "m2-4", stem: { ky: "4, 7, 10 жана 15 сандарынын орточо арифметикалык маанисин табыңыз.", ru: "Найдите среднее арифметическое чисел 4, 7, 10 и 15." }, opts: ["8", "9", "9,5", "10", "12"], ans: 1, why: { ky: "(4 + 7 + 10 + 15) : 4 = 36 : 4 = 9.", ru: "(4 + 7 + 10 + 15) : 4 = 36 : 4 = 9." } },
+      { id: "m2-5", stem: { ky: "Тик бурчтуу үч бурчтуктун катеттери 6 см жана 8 см. Гипотенузасын табыңыз.", ru: "Катеты прямоугольного треугольника равны 6 см и 8 см. Найдите гипотенузу." }, opts: ["9 см", "10 см", "12 см", "14 см", "√48 см"], ans: 1, why: { ky: "√(36 + 64) = √100 = 10.", ru: "√(36 + 64) = √100 = 10." } },
+      { id: "m2-6", stem: { ky: "Эгер 2ˣ = 32 болсо, x эмнеге барабар?", ru: "Если 2ˣ = 32, чему равен x?" }, opts: ["3", "4", "5", "6", "16"], ans: 2, why: { ky: "2⁵ = 32.", ru: "2⁵ = 32." } },
+      { id: "m2-7", stem: { ky: "Автомобиль 3 саатта 240 км жол жүрдү. Ошол эле ылдамдык менен 5 саатта канча км жүрөт?", ru: "Автомобиль проехал 240 км за 3 часа. Сколько километров он проедет за 5 часов с той же скоростью?" }, opts: ["400", "360", "380", "420", "480"], ans: 0, why: { ky: "Ылдамдык 240 : 3 = 80 км/саат, 80 · 5 = 400.", ru: "Скорость 240 : 3 = 80 км/ч, 80 · 5 = 400." } },
+      { id: "m2-8", stem: { ky: "Класстагы балдар менен кыздардын катышы 3 : 5. Класста 32 окуучу болсо, канча кыз бар?", ru: "Мальчики и девочки в классе относятся как 3 : 5. Сколько девочек, если в классе 32 ученика?" }, opts: ["12", "15", "18", "20", "24"], ans: 3, why: { ky: "Бир бөлүк 32 : 8 = 4, кыздар 5 · 4 = 20.", ru: "Одна часть 32 : 8 = 4, девочек 5 · 4 = 20." } },
+      { id: "m2-9", stem: { ky: "Туюнтманы жөнөкөйлөтүңүз: (a² − 9) / (a − 3)", ru: "Упростите выражение: (a² − 9) / (a − 3)" }, opts: ["a − 3", "a + 3", "a² − 3", "3a", "a + 9"], ans: 1, why: { ky: "a² − 9 = (a − 3)(a + 3).", ru: "a² − 9 = (a − 3)(a + 3)." } },
+      { id: "m2-10", stem: { ky: "Тегеректин радиусу 5 см. Анын аянтын табыңыз.", ru: "Радиус круга равен 5 см. Найдите его площадь." }, opts: ["10π см²", "50π см²", "100π см²", "5π см²", "25π см²"], ans: 4, why: { ky: "S = πr² = 25π.", ru: "S = πr² = 25π." } }
+    ]
+  },
+  {
+    id: "an", kind: "mc",
+    title: { ky: "Окшоштуктар", ru: "Аналогии" },
+    intro: { ky: "Берилген жуптагы сөздөрдүн ортосундагы байланышка эң окшош байланышы бар жупту тандаңыз.", ru: "Выберите пару слов, связь между которыми больше всего похожа на связь в исходной паре." },
+    items: [
+      { id: "an-1", stem: { ky: "ДАРЫГЕР : ООРУКАНА", ru: "ВРАЧ : БОЛЬНИЦА" }, opts: { ky: ["ашпозчу : тамак", "окуучу : мугалим", "мугалим : мектеп", "айдоочу : машина", "китеп : китепкана"], ru: ["повар : еда", "ученик : учитель", "учитель : школа", "водитель : машина", "книга : библиотека"] }, ans: 2, why: { ky: "Адис жана анын иштеген жери.", ru: "Специалист и место, где он работает." } },
+      { id: "an-2", stem: { ky: "ЫСЫК : СУУК", ru: "ЖАРКИЙ : ХОЛОДНЫЙ" }, opts: { ky: ["чоң : зор", "бийик : жапыз", "жашыл : чөп", "таттуу : шекер", "сулуу : көркөм"], ru: ["большой : огромный", "высокий : низкий", "зелёный : трава", "сладкий : сахар", "красивый : прекрасный"] }, ans: 1, why: { ky: "Карама-каршы маанидеги сын атоочтор.", ru: "Прилагательные с противоположным значением." } },
+      { id: "an-3", stem: { ky: "ЖАЛБЫРАК : ДАРАК", ru: "ЛИСТ : ДЕРЕВО" }, opts: { ky: ["тамыр : жер", "дөңгөлөк : жол", "куш : уя", "барак : китеп", "карандаш : кагаз"], ru: ["корень : земля", "колесо : дорога", "птица : гнездо", "страница : книга", "карандаш : бумага"] }, ans: 3, why: { ky: "Бөлүк жана бүтүн.", ru: "Часть и целое." } },
+      { id: "an-4", stem: { ky: "КАЙЧЫ : КЕСҮҮ", ru: "НОЖНИЦЫ : РЕЗАТЬ" }, opts: { ky: ["калем : жазуу", "бычак : ашкана", "балка : мык", "кайык : суу", "китеп : окуучу"], ru: ["ручка : писать", "нож : кухня", "молоток : гвоздь", "лодка : вода", "книга : ученик"] }, ans: 0, why: { ky: "Курал жана ал аткарган иш-аракет.", ru: "Инструмент и действие, которое им выполняют." } },
+      { id: "an-5", stem: { ky: "ТАМЧЫ : ЖАМГЫР", ru: "КАПЛЯ : ДОЖДЬ" }, opts: { ky: ["булут : асман", "дарыя : деңиз", "муз : суу", "шамал : бороон", "кар бүртүгү : кар"], ru: ["облако : небо", "река : море", "лёд : вода", "ветер : буря", "снежинка : снег"] }, ans: 4, why: { ky: "Бир бирдик жана алардан турган жалпы көрүнүш.", ru: "Отдельная единица и явление, которое из таких единиц состоит." } },
+      { id: "an-6", stem: { ky: "УРУК : ӨСҮМДҮК", ru: "СЕМЯ : РАСТЕНИЕ" }, opts: { ky: ["сүт : уй", "жумуртка : балапан", "гүл : аары", "уя : куш", "нан : ун"], ru: ["молоко : корова", "яйцо : птенец", "цветок : пчела", "гнездо : птица", "хлеб : мука"] }, ans: 1, why: { ky: "Мурунку баскыч жана андан пайда болгон тирүү жандык.", ru: "Начальная стадия и живое существо, которое из неё развивается." } },
+      { id: "an-7", stem: { ky: "БИШКЕК : КЫРГЫЗСТАН", ru: "БИШКЕК : КЫРГЫЗСТАН" }, opts: { ky: ["Ош : Бишкек", "Алматы : Казакстан", "Ысык-Көл : көл", "Астана : Казакстан", "Москва : Европа"], ru: ["Ош : Бишкек", "Алматы : Казахстан", "Иссык-Куль : озеро", "Астана : Казахстан", "Москва : Европа"] }, ans: 3, why: { ky: "Борбор шаар жана мамлекет. Алматы Казакстандын борбору эмес.", ru: "Столица и государство. Алматы не столица Казахстана." } },
+      { id: "an-8", stem: { ky: "АЧКАЛЫК : ТАМАК", ru: "ГОЛОД : ЕДА" }, opts: { ky: ["чарчоо : жумуш", "суук : кыш", "уйку : түн", "кубаныч : күлкү", "суусоо : суу"], ru: ["усталость : работа", "холод : зима", "сон : ночь", "радость : смех", "жажда : вода"] }, ans: 4, why: { ky: "Муктаждык жана аны канааттандыруучу нерсе.", ru: "Потребность и то, что её утоляет." } }
+    ]
+  },
+  {
+    id: "sc", kind: "mc",
+    title: { ky: "Сүйлөмдү толуктоо", ru: "Дополнение предложений" },
+    intro: { ky: "Сүйлөмдүн маанисине эң туура келген сөздү тандаңыз.", ru: "Выберите слово, которое лучше всего подходит по смыслу предложения." },
+    items: [
+      { id: "sc-1", stem: { ky: "Аба ырайы ___ болгонуна карабастан, туристтер ашууга чыгууну чечишти.", ru: "Несмотря на ___ погоду, туристы решили подняться на перевал." }, opts: { ky: ["ачык", "жылуу", "начар", "күнөстүү", "тынч"], ru: ["ясную", "тёплую", "ненастную", "солнечную", "тихую"] }, ans: 2, why: { ky: "«Карабастан» тоскоолдукту билдирет, ошондуктан жаман аба ырайы керек.", ru: "«Несмотря на» указывает на препятствие, значит, погода была плохой." } },
+      { id: "sc-2", stem: { ky: "Ал ушунчалык ___ эле, акчаны эч качан бекер коротчу эмес.", ru: "Он был так ___, что никогда не тратил деньги зря." }, opts: { ky: ["үнөмчүл", "ысырапкор", "жалкоо", "шайыр", "алаксыган"], ru: ["бережлив", "расточителен", "ленив", "весел", "рассеян"] }, ans: 0, why: { ky: "Акчаны бекер коротпогон киши үнөмчүл.", ru: "Тот, кто не тратит деньги зря, бережлив." } },
+      { id: "sc-3", stem: { ky: "Окумуштуулар жаңы дарыга чоң үмүт артышкан, бирок клиникалык сыноолор анын натыйжалуулугун ___.", ru: "Учёные возлагали большие надежды на новое лекарство, однако клинические испытания ___ его эффективность." }, opts: { ky: ["тастыкташты", "тастыкташкан жок", "далилдешти", "күчөтүштү", "көрсөтүштү"], ru: ["подтвердили", "не подтвердили", "доказали", "усилили", "показали"] }, ans: 1, why: { ky: "«Бирок» үмүткө карама-каршы натыйжаны көрсөтөт.", ru: "«Однако» указывает на результат, противоположный надеждам." } },
+      { id: "sc-4", stem: { ky: "Жазында дарыя ___, айыл райондон ажырап калды.", ru: "Весной река ___, и деревня оказалась отрезанной от района." }, opts: { ky: ["тайыздады", "ташыды", "тоңду", "кургады", "тынчыды"], ru: ["обмелела", "разлилась", "замёрзла", "высохла", "успокоилась"] }, ans: 1, why: { ky: "Айылды суу ташкыны гана ажыратып коё алат.", ru: "Отрезать деревню могло только половодье." } },
+      { id: "sc-5", stem: { ky: "Анын баяндамасы ушунчалык ___ болгондуктан, адистер да баарын түшүнгөн жок.", ru: "Его доклад был настолько ___, что даже специалисты не всё поняли." }, opts: { ky: ["жөнөкөй", "кыска", "татаал", "кызыктуу", "түшүнүктүү"], ru: ["простым", "коротким", "сложным", "интересным", "понятным"] }, ans: 2, why: { ky: "Адистер да түшүнбөсө, баяндама татаал болгон.", ru: "Если даже специалисты не поняли, доклад был сложным." } }
+    ]
+  },
+  {
+    id: "rd", kind: "mc",
+    title: { ky: "Окуп түшүнүү", ru: "Чтение и понимание" },
+    intro: { ky: "Текстти окуп, суроолорго текстке таянып жооп бериңиз.", ru: "Прочитайте текст и ответьте на вопросы, опираясь на него." },
+    passage: {
+      ky: "Ысык-Көл дүйнөдөгү эң ири бийик тоолуу көлдөрдүн бири. Ал деңиз деңгээлинен болжол менен 1600 метр бийиктикте жайгашкан, эң терең жери 660 метрден ашат. Көлгө көптөгөн дарыялар жана суулар куят, бирок андан бир да дарыя агып чыкпайт. Көлдөн суу буулануу аркылуу гана азаят, ал эми дарыялар алып келген туздар көлдө калат. Ошондуктан Ысык-Көлдүн суусу бир аз туздуу. Тоодо кыш катаал болгонуна карабастан, көл тоңбойт. Туздуу суу тузсуз сууга караганда төмөнкү температурада тоңот, ал эми көлдүн чоң тереңдиги жайында көп жылуулук топтоп, кышында аны акырындык менен бөлүп чыгарууга мүмкүндүк берет. Көлдүн аталышы «жылуу көл» дегенди билдирет. Касиеттердин ушундай кайталангыс айкалышынын аркасында Ысык-Көл бүтүндөй өрөөндүн климатын жумшартат жана жыл сайын миңдеген эс алуучуларды тартат.",
+      ru: "Иссык-Куль — одно из крупнейших высокогорных озёр мира. Оно лежит на высоте около 1600 метров над уровнем моря, а его наибольшая глубина превышает 660 метров. В озеро впадает множество рек и ручьёв, но ни одна река из него не вытекает. Вода уходит из озера только путём испарения, а соли, принесённые реками, остаются. Поэтому вода в Иссык-Куле слегка солёная. Несмотря на суровые зимы в горах, озеро не замерзает. Солёная вода замерзает при более низкой температуре, чем пресная, а огромная глубина позволяет озеру накапливать летом много тепла и медленно отдавать его зимой. Название озера в переводе с кыргызского означает «тёплое озеро». Благодаря этому уникальному сочетанию свойств Иссык-Куль смягчает климат всей котловины и ежегодно привлекает тысячи отдыхающих."
+    },
+    items: [
+      { id: "rd-1", stem: { ky: "Тексттин негизги идеясы кайсы?", ru: "Какова основная мысль текста?" }, opts: { ky: ["Ысык-Көлдө эс алуу кымбат", "Ысык-Көлдүн өзгөчө касиеттери жана алардын себептери", "Кыргызстандагы бардык дарыялар Ысык-Көлгө куят", "Ысык-Көл дүйнөдөгү эң терең көл", "Тоодо кыш катаал болот"], ru: ["Отдых на Иссык-Куле дорогой", "Особые свойства Иссык-Куля и их причины", "Все реки Кыргызстана впадают в Иссык-Куль", "Иссык-Куль — самое глубокое озеро мира", "В горах суровые зимы"] }, ans: 1, why: { ky: "Текст көлдүн туздуулугун, тоңбогонун жана анын себептерин түшүндүрөт.", ru: "Текст объясняет солёность озера, то, что оно не замерзает, и причины этого." } },
+      { id: "rd-2", stem: { ky: "Текст боюнча, Ысык-Көл эмне үчүн тоңбойт?", ru: "Почему, согласно тексту, Иссык-Куль не замерзает?" }, opts: { ky: ["Ага ысык булактар куят", "Анын суусу туздуу жана көл абдан терең", "Ал деңиз деңгээлинде жайгашкан", "Тоодо кыш жылуу болот", "Андан көп дарыя агып чыгат"], ru: ["В него впадают горячие источники", "Его вода солёная, и озеро очень глубокое", "Оно находится на уровне моря", "Зимы в горах тёплые", "Из него вытекает много рек"] }, ans: 1, why: { ky: "Текстте эки себеп айтылат: туздуу суу жана чоң тереңдик.", ru: "В тексте названы две причины: солёная вода и большая глубина." } },
+      { id: "rd-3", stem: { ky: "Тексттеги «кайталангыс» деген сөз эмнени билдирет?", ru: "Что означает слово «уникальный» в тексте?" }, opts: { ky: ["эскирген", "туруктуу эмес", "башка эч жерде жок, өзгөчө", "кооптуу", "жөнөкөй"], ru: ["устаревший", "непостоянный", "единственный в своём роде", "опасный", "обычный"] }, ans: 2, why: { ky: "Кайталангыс = башка жерде кездешпеген.", ru: "Уникальный — такой, которому нет подобных." } },
+      { id: "rd-4", stem: { ky: "Төмөнкү ойлордун кайсынысы текстте АЙТЫЛГАН ЭМЕС?", ru: "Какое из утверждений в тексте НЕ упоминается?" }, opts: { ky: ["Көл болжол менен 1600 м бийиктикте жайгашкан", "Көлгө көп дарыя куят", "Көлдө балык чарбасы өнүккөн", "Көлдүн суусу бир аз туздуу", "Көл өрөөндүн климатын жумшартат"], ru: ["Озеро находится на высоте около 1600 м", "В озеро впадает много рек", "На озере развито рыбное хозяйство", "Вода в озере слегка солёная", "Озеро смягчает климат котловины"] }, ans: 2, why: { ky: "Балык чарбасы жөнүндө текстте эч нерсе жок.", ru: "О рыбном хозяйстве в тексте ничего не сказано." } },
+      { id: "rd-5", stem: { ky: "Текстке таянып, көлдүн суусу эмне үчүн туздуу экенин аныктаңыз.", ru: "Почему, исходя из текста, вода в озере солёная?" }, opts: { ky: ["Көлгө деңиз суусу куят", "Көлдүн түбүндө туз кени бар", "Суу бууланат, ал эми дарыялар алып келген туздар көлдө калат", "Көлгө жамгыр аз жаайт", "Көлдүн суусу эч качан жылыбайт"], ru: ["В озеро поступает морская вода", "На дне озера есть залежи соли", "Вода испаряется, а принесённые реками соли остаются в озере", "Над озером выпадает мало дождей", "Вода в озере никогда не прогревается"] }, ans: 2, why: { ky: "Агып чыгуучу дарыя жок, ошондуктан туз чогулат.", ru: "Вытекающих рек нет, поэтому соли накапливаются." } }
+    ]
+  },
+  {
+    id: "gr", kind: "mc", perLang: true,
+    title: { ky: "Практикалык грамматика (кыргыз тили)", ru: "Практическая грамматика (русский язык)" },
+    intro: { ky: "Туура жоопту тандаңыз. Бул бөлүк тесттин тилине жараша өзгөрөт.", ru: "Выберите правильный ответ. Этот раздел зависит от языка теста." },
+    items: {
+      ky: [
+        { id: "gk-1", stem: "«Китеп» сөзүнүн көптүк түрү кайсы?", opts: ["китептар", "китептер", "китепдер", "китептор", "китептөр"], ans: 1, why: "Акыркы үндүү «е», акыркы үнсүз «п» каткалаң, ошондуктан -тер." },
+        { id: "gk-2", stem: "«Көз» сөзүнүн көптүк түрү кайсы?", opts: ["көзлер", "көздер", "көздар", "көзтөр", "көздөр"], ans: 4, why: "«З» тыбышынан кийин -д-, акыркы үндүү «ө» болгондуктан -дөр." },
+        { id: "gk-3", stem: "Мен кечээ ___ бардым.", opts: ["мектепка", "мектепке", "мектепте", "мектептен", "мектепти"], ans: 1, why: "«Бар-» этиши барыш жөндөмөсүн талап кылат: мектеп + -ке." },
+        { id: "gk-4", stem: "Төмөнкү сөздөрдүн кайсынысы этиш?", opts: ["китепкана", "жашыл", "окуду", "тез", "бешинчи"], ans: 2, why: "«Окуду» кыймыл-аракетти билдирет." },
+        { id: "gk-5", stem: "Биз эртең тоого ___.", opts: ["барабыз", "бардык", "барат", "барасың", "бардым"], ans: 0, why: "«Биз» 1-жак көптүк, «эртең» келер чакты талап кылат." }
+      ],
+      ru: [
+        { id: "gr-1", stem: "Выберите правильную форму: «Это случилось в ___ году».", opts: ["двухтысячном двадцать шестом", "две тысячи двадцать шестом", "двух тысяча двадцать шестом", "две тысячи двадцать шестого", "двухтысяча двадцать шестой"], ans: 1, why: "В составных порядковых числительных склоняется только последнее слово." },
+        { id: "gr-2", stem: "В каком случае НЕ пишется слитно?", opts: ["(не)был дома", "(не)навидеть врага", "(не)смотря в окно", "(не)здоров, а болен", "(не)высокий, а низкий"], ans: 1, why: "«Ненавидеть» без «не» не употребляется." },
+        { id: "gr-3", stem: "Какое сочетание составлено правильно?", opts: ["оплатить за проезд", "заплатить проезд", "оплатить проезд", "уплатить о проезде", "платить проезд"], ans: 2, why: "Оплатить что? Проезд. Заплатить за что? За проезд." },
+        { id: "gr-4", stem: "Выберите правильный вариант: «Действовать ___».", opts: ["согласно приказа", "согласно приказу", "согласно приказом", "согласно с приказом", "согласно приказе"], ans: 1, why: "Предлог «согласно» требует дательного падежа." },
+        { id: "gr-5", stem: "Купить пять килограммов ___.", opts: ["помидор", "помидоров", "помидоры", "помидорах", "помидора"], ans: 1, why: "Родительный падеж множественного числа: помидоров." }
+      ]
+    }
+  }
+];
+
+const STORE = "ort-mock-1";
+let state = { lang: "ky", answers: {}, graded: false, timeLeft: 3600 };
+try { const s = JSON.parse(localStorage.getItem(STORE) || "null"); if (s) state = Object.assign(state, s); } catch (e) {}
+function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} }
+
+const pick = (v, lang) => (v && typeof v === "object" && !Array.isArray(v)) ? v[lang] : v;
+const isTextual = s => /[а-яёңөүА-ЯЁҢӨҮ]{3,}/.test(s);
+function itemsFor(sec, lang) { return sec.perLang ? sec.items[lang] : sec.items; }
+function allItems(lang) { return SECTIONS.flatMap(sec => itemsFor(sec, lang).map(it => ({ sec, it }))); }
+function optsFor(sec, it, lang) { return sec.kind === "cmp" ? CMP_OPTS[lang] : pick(it.opts, lang); }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+function render() {
+  const L = state.lang, T = UI[L];
+  document.documentElement.lang = L;
+  ["eyebrow", "title", "lede", "foot1", "foot2"].forEach(k => document.getElementById(k).textContent = T[k]);
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.lang === L));
+  document.getElementById("check-btn").textContent = T.check;
+  document.getElementById("reset-btn").textContent = T.reset;
+  updateTimerBtn();
+
+  let n = 0, html = "";
+  for (const sec of SECTIONS) {
+    html += `<section class="part${state.graded ? " graded" : ""}"><div class="part-head"><h2>${esc(sec.title[L])}</h2><p>${esc(sec.intro[L])}</p>`;
+    if (sec.kind === "cmp") html += `<ul class="legend">${CMP_OPTS[L].map((o, i) => `<li><b>${LETTERS[i]}</b> ${esc(o)}</li>`).join("")}</ul>`;
+    html += `</div>`;
+    if (sec.passage) html += `<div class="passage"><p>${esc(sec.passage[L])}</p></div>`;
+    for (const it of itemsFor(sec, L)) {
+      n++;
+      const chosen = state.answers[it.id];
+      let stem = "";
+      if (sec.kind === "cmp") {
+        const a = pick(it.a, L), b = pick(it.b, L);
+        if (it.cond) stem += `<p class="stem cond">${esc(pick(it.cond, L))}</p>`;
+        stem += `<div class="cmp"><div><small>${T.colA}</small><span class="${isTextual(a) ? "text" : ""}">${esc(a)}</span></div><div><small>${T.colB}</small><span class="${isTextual(b) ? "text" : ""}">${esc(b)}</span></div></div>`;
+      } else {
+        stem = `<p class="stem">${esc(pick(it.stem, L))}</p>`;
+      }
+      const opts = optsFor(sec, it, L).map((o, i) => {
+        let cls = "bubble";
+        if (state.graded) { if (i === it.ans) cls += " right"; else if (i === chosen) cls += " wrong"; }
+        return `<label class="${cls}"><input type="radio" id="${it.id}-${i}" name="${it.id}" value="${i}"${chosen === i ? " checked" : ""}${state.graded ? " disabled" : ""}><span class="dot" aria-hidden="true">${LETTERS[i]}</span><span>${esc(o)}</span></label>`;
+      }).join("");
+      let feedback = "";
+      if (state.graded) {
+        const ok = chosen === it.ans;
+        const head = ok ? `<span class="mark ok">${T.correct}.</span>` : `<span class="mark no">${chosen === undefined ? T.blank : T.yourWrong} ${LETTERS[it.ans]}.</span>`;
+        feedback = `<p class="why">${head} ${esc(pick(it.why, L))}</p>`;
+      }
+      html += `<div class="q"><span class="num">${n}.</span><div class="body">${stem}<div class="opts" role="radiogroup">${opts}</div>${feedback}</div></div>`;
+    }
+    html += `</section>`;
+  }
+  document.getElementById("test").innerHTML = html;
+  renderProgress();
+  renderScore();
+}
+
+function renderProgress() {
+  const items = allItems(state.lang);
+  const a = items.filter(x => state.answers[x.it.id] !== undefined).length;
+  document.getElementById("progress").textContent = UI[state.lang].progress(a, items.length);
+}
+
+function renderScore() {
+  const box = document.getElementById("score");
+  if (!state.graded) { box.hidden = true; return; }
+  const L = state.lang, T = UI[L];
+  let total = 0, max = 0, rows = "";
+  for (const sec of SECTIONS) {
+    const items = itemsFor(sec, L);
+    const s = items.filter(it => state.answers[it.id] === it.ans).length;
+    total += s; max += items.length;
+    rows += `<tr><td>${esc(sec.title[L])}</td><td>${s} / ${items.length}</td></tr>`;
+  }
+  box.innerHTML = `<h2>${T.scoreTitle(total, max)}</h2><table>${rows}</table>`;
+  box.hidden = false;
+}
+
+document.getElementById("test").addEventListener("change", e => {
+  if (e.target.type !== "radio") return;
+  state.answers[e.target.name] = Number(e.target.value);
+  save(); renderProgress();
+});
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => { state.lang = b.dataset.lang; save(); render(); }));
+document.getElementById("check-btn").addEventListener("click", () => {
+  state.graded = true; stopTimer(); save(); render();
+  document.getElementById("score").scrollIntoView({ block: "start", behavior: "smooth" });
+});
+let resetArmed = false;
+document.getElementById("reset-btn").addEventListener("click", e => {
+  const btn = e.currentTarget;
+  if (!resetArmed) { resetArmed = true; btn.textContent = UI[state.lang].resetConfirm; setTimeout(() => { resetArmed = false; btn.textContent = UI[state.lang].reset; }, 3000); return; }
+  resetArmed = false; stopTimer();
+  state = { lang: state.lang, answers: {}, graded: false, timeLeft: 3600 };
+  save(); drawTimer(); render(); window.scrollTo(0, 0);
+});
+
+let tick = null;
+function drawTimer() {
+  const t = Math.max(0, state.timeLeft), el = document.getElementById("timer");
+  el.textContent = `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+  el.classList.toggle("low", t <= 300);
+}
+function updateTimerBtn() { document.getElementById("timer-btn").textContent = tick ? UI[state.lang].pause : UI[state.lang].start; }
+function stopTimer() { clearInterval(tick); tick = null; updateTimerBtn(); }
+document.getElementById("timer-btn").addEventListener("click", () => {
+  if (tick) { stopTimer(); save(); return; }
+  if (state.graded || state.timeLeft <= 0) return;
+  tick = setInterval(() => {
+    state.timeLeft--; drawTimer();
+    if (state.timeLeft % 10 === 0) save();
+    if (state.timeLeft <= 0) { stopTimer(); state.graded = true; save(); render(); }
+  }, 1000);
+  updateTimerBtn();
+});
+
+drawTimer();
+render();
+</script>
+
+</body></html>
