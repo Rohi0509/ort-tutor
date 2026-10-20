@@ -94,6 +94,113 @@ const UI = {
   }
 };
 
+/* Accounts, parents and settings. */
+Object.assign(UI.en, {
+  footCloud: "Practice material written in the ORT format. It is not official ЦООМО material. Your progress is saved to your account.",
+  loading: "Loading…", account: "Account", signOut: "Log out",
+  loginTitle: "Log in", loginLede: "ORT Tutor is invite-only. Log in, or create an account with the group code from the person who invited you.",
+  email: "Email", password: "Password", nickname: "Nickname", groupCode: "Group code", iAm: "I am a",
+  student: "Student", parent: "Parent",
+  nickHint: "Not your real name. Your parents will see it.", pwHint: "At least 8 characters.",
+  loginBtn: "Log in", signupTitle: "Create an account", signupBtn: "Create account",
+  toSignup: "New here? Create an account", toLogin: "Already have an account? Log in", toForgot: "Forgot your password?",
+  forgotTitle: "Reset your password", forgotLede: "We will email you a link. Open it on this device to choose a new password.",
+  sendLink: "Send the link", linkSent: "If that email has an account, the link is on its way. Check your spam folder too.",
+  newPwTitle: "Choose a new password", savePw: "Save password", pwSaved: "Password changed. You are logged in.",
+  needConfirm: "Almost done. Open the email we sent you and tap the link to confirm your account, then log in.",
+  linkCodeTitle: "Your parent link code", linkCodeHint: "Give this code to a parent so they can follow your progress. They can see your scores but cannot change anything.",
+  parentsN: n => n ? `${n} parent account${n > 1 ? "s" : ""} can see your progress.` : "No parent account is linked yet.",
+  saveNick: "Save nickname", savedOk: "Saved.",
+  sync: { saved: "All progress is saved to your account.", waiting: "Saving…", offline: "You are offline. Progress will be saved when you are back online.", idle: "Progress is saved to your account." },
+  parentTitle: "Your children", parentLede: "See how each child is doing. You can only see children who gave you their link code.",
+  noChildren: "No children linked yet. Ask your child for the code on their Account page.",
+  linkTitle: "Link a child", linkHint: "Type the 6-character code from your child's Account page.", linkBtn: "Link", linked: n => `${n} is now linked.`,
+  unlink: "Remove this child", unlinkConfirm: "Tap again to remove",
+  lastActive: d => `Last practised ${d}`, never: "Has not practised yet",
+  answeredN: n => `${n} questions answered`, accuracy: p => `${p}% right`, last14: "Last 14 days", questionsL: "Questions", rightL: "Right",
+  bySubject: "By subject", needsWork: "Needs work", badgesEarned: "Badges earned", noneYet: "None yet.",
+  timedBestL: "Timed challenge best", mixedBestL: "Mixed practice best", copySummary: "Copy summary", copied: "Copied.",
+  err: {
+    offline: "No internet connection. Try again when you are online.", badLogin: "That email or password is wrong.",
+    exists: "There is already an account with that email. Try logging in.", groupCode: "That group code isn't right. Ask the person who invited you.",
+    notConfirmed: "Open the email we sent you and tap the confirmation link first, then log in.", rateLimit: "Too many tries or emails. Wait a while, then try again.",
+    weakPw: "Choose a longer password (at least 8 characters).", badEmail: "That email address doesn't look right.",
+    noChild: "No child found with that code. Check it on your child's Account page.", notParent: "Only parent accounts can link to a child.",
+    samePw: "Choose a password different from your old one.", profile: "This account isn't set up properly. Ask the person who invited you.",
+    nickname: "Students need a nickname.", generic: "Something went wrong. Try again."
+  }
+});
+Object.assign(UI.ru, {
+  footCloud: "Задания составлены в формате ОРТ для тренировки. Это не официальные материалы ЦООМО. Прогресс сохраняется в вашем аккаунте.",
+  loading: "Загрузка…", account: "Аккаунт", signOut: "Выйти",
+  loginTitle: "Вход", loginLede: "Репетитор ОРТ доступен только по приглашению. Войдите или создайте аккаунт с кодом группы, который вам дал пригласивший.",
+  email: "Эл. почта", password: "Пароль", nickname: "Никнейм", groupCode: "Код группы", iAm: "Я",
+  student: "Ученик", parent: "Родитель",
+  nickHint: "Не настоящее имя. Его увидят ваши родители.", pwHint: "Не меньше 8 символов.",
+  loginBtn: "Войти", signupTitle: "Создать аккаунт", signupBtn: "Создать аккаунт",
+  toSignup: "Впервые здесь? Создайте аккаунт", toLogin: "Уже есть аккаунт? Войдите", toForgot: "Забыли пароль?",
+  forgotTitle: "Сброс пароля", forgotLede: "Мы отправим ссылку на почту. Откройте её на этом устройстве, чтобы задать новый пароль.",
+  sendLink: "Отправить ссылку", linkSent: "Если с этой почтой есть аккаунт, ссылка уже отправлена. Проверьте и папку «Спам».",
+  newPwTitle: "Новый пароль", savePw: "Сохранить пароль", pwSaved: "Пароль изменён. Вы вошли в аккаунт.",
+  needConfirm: "Почти готово. Откройте письмо, которое мы отправили, и нажмите ссылку, чтобы подтвердить аккаунт. Затем войдите.",
+  linkCodeTitle: "Код для родителей", linkCodeHint: "Дайте этот код родителю, чтобы он видел ваш прогресс. Родитель видит результаты, но ничего не может изменить.",
+  parentsN: n => n ? `Ваш прогресс видят родительские аккаунты: ${n}.` : "Родительский аккаунт пока не подключён.",
+  saveNick: "Сохранить никнейм", savedOk: "Сохранено.",
+  sync: { saved: "Весь прогресс сохранён в аккаунте.", waiting: "Сохранение…", offline: "Нет интернета. Прогресс сохранится, когда связь появится.", idle: "Прогресс сохраняется в аккаунте." },
+  parentTitle: "Ваши дети", parentLede: "Смотрите, как идут дела у каждого ребёнка. Видны только дети, которые дали вам свой код.",
+  noChildren: "Пока нет подключённых детей. Попросите у ребёнка код со страницы «Аккаунт».",
+  linkTitle: "Подключить ребёнка", linkHint: "Введите 6-значный код со страницы «Аккаунт» ребёнка.", linkBtn: "Подключить", linked: n => `${n} подключён(а).`,
+  unlink: "Отключить ребёнка", unlinkConfirm: "Нажмите ещё раз, чтобы отключить",
+  lastActive: d => `Последнее занятие: ${d}`, never: "Ещё не занимался(ась)",
+  answeredN: n => `Ответов на вопросы: ${n}`, accuracy: p => `Верно: ${p}%`, last14: "Последние 14 дней", questionsL: "Вопросов", rightL: "Верно",
+  bySubject: "По предметам", needsWork: "Нужно подтянуть", badgesEarned: "Полученные значки", noneYet: "Пока нет.",
+  timedBestL: "Лучший результат на время", mixedBestL: "Лучший в смешанной практике", copySummary: "Скопировать сводку", copied: "Скопировано.",
+  err: {
+    offline: "Нет подключения к интернету. Попробуйте, когда связь появится.", badLogin: "Неверная почта или пароль.",
+    exists: "Аккаунт с этой почтой уже есть. Попробуйте войти.", groupCode: "Неверный код группы. Спросите у того, кто вас пригласил.",
+    notConfirmed: "Сначала откройте письмо и нажмите ссылку для подтверждения, затем войдите.", rateLimit: "Слишком много попыток или писем. Подождите и попробуйте снова.",
+    weakPw: "Выберите пароль длиннее (не меньше 8 символов).", badEmail: "Адрес почты выглядит неправильно.",
+    noChild: "Ребёнок с таким кодом не найден. Проверьте код на странице «Аккаунт» ребёнка.", notParent: "Подключать детей могут только родительские аккаунты.",
+    samePw: "Новый пароль должен отличаться от старого.", profile: "Аккаунт настроен неправильно. Обратитесь к тому, кто вас пригласил.",
+    nickname: "Ученику нужен никнейм.", generic: "Что-то пошло не так. Попробуйте ещё раз."
+  }
+});
+Object.assign(UI.ky, {
+  footCloud: "Бул тапшырмалар ЖРТнын форматында машыгуу үчүн даярдалган. Алар ЦООМОнун расмий материалдары эмес. Прогресс аккаунтуңузда сакталат.",
+  loading: "Жүктөлүүдө…", account: "Аккаунт", signOut: "Чыгуу",
+  loginTitle: "Кирүү", loginLede: "ЖРТ репетитору чакыруу менен гана иштейт. Кириңиз же сизди чакырган адам берген топтун коду менен аккаунт түзүңүз.",
+  email: "Электрондук почта", password: "Сырсөз", nickname: "Лакап ат", groupCode: "Топтун коду", iAm: "Мен",
+  student: "Окуучумун", parent: "Ата-энемин",
+  nickHint: "Чыныгы атыңыз эмес. Аны ата-энеңиз көрөт.", pwHint: "Кеминде 8 белги.",
+  loginBtn: "Кирүү", signupTitle: "Аккаунт түзүү", signupBtn: "Аккаунт түзүү",
+  toSignup: "Биринчи жолубу? Аккаунт түзүңүз", toLogin: "Аккаунтуңуз барбы? Кириңиз", toForgot: "Сырсөздү унуттуңузбу?",
+  forgotTitle: "Сырсөздү калыбына келтирүү", forgotLede: "Почтаңызга шилтеме жөнөтөбүз. Жаңы сырсөз коюу үчүн аны ушул түзмөктө ачыңыз.",
+  sendLink: "Шилтемени жөнөтүү", linkSent: "Бул почта менен аккаунт болсо, шилтеме жөнөтүлдү. «Спам» папкасын да текшериңиз.",
+  newPwTitle: "Жаңы сырсөз", savePw: "Сырсөздү сактоо", pwSaved: "Сырсөз өзгөртүлдү. Сиз аккаунтка кирдиңиз.",
+  needConfirm: "Дээрлик даяр. Биз жөнөткөн катты ачып, аккаунтту ырастоо үчүн шилтемени басыңыз. Андан соң кириңиз.",
+  linkCodeTitle: "Ата-эне үчүн код", linkCodeHint: "Прогрессиңизди көрүп турушу үчүн бул кодду ата-энеңизге бериңиз. Алар натыйжаларды көрөт, бирок эч нерсени өзгөртө алышпайт.",
+  parentsN: n => n ? `Прогрессиңизди көргөн ата-эне аккаунттары: ${n}.` : "Ата-эне аккаунту азырынча туташтырылган жок.",
+  saveNick: "Лакап атты сактоо", savedOk: "Сакталды.",
+  sync: { saved: "Бардык прогресс аккаунтта сакталды.", waiting: "Сакталууда…", offline: "Интернет жок. Байланыш калыбына келгенде прогресс сакталат.", idle: "Прогресс аккаунтта сакталат." },
+  parentTitle: "Балдарыңыз", parentLede: "Ар бир балаңыздын ийгилигин көрүңүз. Өз кодун берген балдар гана көрүнөт.",
+  noChildren: "Азырынча туташтырылган бала жок. Балаңыздан «Аккаунт» барагындагы кодду сураңыз.",
+  linkTitle: "Баланы туташтыруу", linkHint: "Балаңыздын «Аккаунт» барагындагы 6 белгилүү кодду жазыңыз.", linkBtn: "Туташтыруу", linked: n => `${n} туташтырылды.`,
+  unlink: "Баланы өчүрүү", unlinkConfirm: "Өчүрүү үчүн дагы бир басыңыз",
+  lastActive: d => `Акыркы машыгуу: ${d}`, never: "Азырынча машыга элек",
+  answeredN: n => `Жооп берилген суроолор: ${n}`, accuracy: p => `Туура: ${p}%`, last14: "Акыркы 14 күн", questionsL: "Суроолор", rightL: "Туура",
+  bySubject: "Предметтер боюнча", needsWork: "Иштеш керек", badgesEarned: "Алынган белгилер", noneYet: "Азырынча жок.",
+  timedBestL: "Убакытка сыноодогу эң жакшы", mixedBestL: "Аралаш машыгуудагы эң жакшы", copySummary: "Кыскача маалыматты көчүрүү", copied: "Көчүрүлдү.",
+  err: {
+    offline: "Интернет жок. Байланыш болгондо кайра аракет кылыңыз.", badLogin: "Почта же сырсөз туура эмес.",
+    exists: "Бул почта менен аккаунт мурунтан эле бар. Кирип көрүңүз.", groupCode: "Топтун коду туура эмес. Сизди чакырган адамдан сураңыз.",
+    notConfirmed: "Адегенде катты ачып, ырастоо шилтемесин басыңыз, андан соң кириңиз.", rateLimit: "Аракет же кат өтө көп болду. Бир аз күтүп, кайра аракет кылыңыз.",
+    weakPw: "Узунураак сырсөз тандаңыз (кеминде 8 белги).", badEmail: "Почтанын дареги туура эмес көрүнөт.",
+    noChild: "Мындай коду бар бала табылган жок. Кодду балаңыздын «Аккаунт» барагынан текшериңиз.", notParent: "Баланы ата-эне аккаунттары гана туташтыра алат.",
+    samePw: "Жаңы сырсөз эскисинен башка болушу керек.", profile: "Аккаунт туура орнотулган эмес. Сизди чакырган адамга кайрылыңыз.",
+    nickname: "Окуучуга лакап ат керек.", generic: "Бир нерсе туура эмес болду. Кайра аракет кылыңыз."
+  }
+});
+
 const CMP_OPTS = {
   en: ["The quantity in Column А is greater", "The quantity in Column Б is greater", "The quantities are equal", "Not enough information to decide"],
   ru: ["Величина в колонке А больше", "Величина в колонке Б больше", "Величины равны", "Информации недостаточно"],

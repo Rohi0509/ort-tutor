@@ -16,6 +16,8 @@ Each subject also has a mixed practice of 8 random questions and a **timed chall
 
 **Game:** students earn XP for right answers (with a bonus for 3 or more in a row), mastering a topic, reaching their daily goal and doing well on timed challenges. XP raises their level, from Beginner to ORT Legend. There are 15 badges to collect, a day streak, and a daily goal they can set (10, 20, 30 or 50 questions). The level card on the home screen opens the Trophies page.
 
+**Accounts (invite-only):** students sign up with an email, password, nickname and the group code, and their progress is saved to their account so it follows them to any device. Parents sign up with the group code too, then type their child's link code (shown on the child's Account page) to follow that child: level, XP, streak, the last 14 days, mastery by subject and topic, weak topics and badges. Parents can only see children they linked, and the database enforces this. Only email, nickname and progress are stored.
+
 The folder also holds **ORT Mock Test 1** (`mock-test/index.html`): a 43-question practice Main Test with a timer and answer key, in Kyrgyz and Russian.
 
 ## Open it
@@ -56,6 +58,11 @@ Open this folder in Claude Code (`cd ort-tutor` then `claude`). `CLAUDE.md` desc
 ```
 index.html          the tutor page; loads the files below in order
 css/styles.css      all styles and the light/dark colour tokens
+vendor/supabase.js  Supabase library (kept locally so the app works offline)
+js/config.js        Supabase project address and public key
+js/auth.js          accounts, saving progress online, parent links
+supabase/schema.sql database setup: run once in the Supabase SQL editor
+tests/              browser tests for accounts and the game
 js/ui.js            interface text in en/ru/ky, answer letters, comparison choices
 js/game.js          XP, levels, badges, streaks, celebrations
 js/subjects.js      creates the SUBJECTS list

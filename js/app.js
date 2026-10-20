@@ -1,13 +1,33 @@
-/* App logic: state, rendering of each view, and event handlers. Needs ui.js, game.js, subjects.js and js/data/*.js loaded first. */
+/* App logic: state, rendering of each view, and event handlers. Needs auth.js, ui.js, game.js, subjects.js and js/data/*.js loaded first. */
 /* ---------- state ---------- */
-const STORE = "ort-tutor-v1";
-let saved = { lang: "en", best: {}, xp: 0, badges: {}, stats: {}, days: {}, goal: 20, timed: {} };
-try { const s = JSON.parse(localStorage.getItem(STORE) || "null"); if (s) saved = Object.assign(saved, s); } catch (e) {}
+// Without accounts progress lives under ort-tutor-v1; a logged-in student's copy lives under ort-tutor-v1:<userId>.
+let STORE = "ort-tutor-v1";
+const LANG_KEY = "ort-tutor-lang";
+const defaults = () => ({ lang: "en", best: {}, xp: 0, badges: {}, stats: {}, days: {}, goal: 20, timed: {} });
 const freshStats = () => ({ answered: 0, right: 0, bestCombo: 0, goalDays: 0, timedDone: 0, timedBest: 0, subjects: {} });
-saved.stats = Object.assign(freshStats(), saved.stats);
-function persist() { try { localStorage.setItem(STORE, JSON.stringify(saved)); } catch (e) {} }
+function readStore(key) { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (e) { return null; } }
+function useData(data, lang) {
+  saved = Object.assign(defaults(), data || {});
+  if (lang) saved.lang = lang;
+  saved.stats = Object.assign(freshStats(), saved.stats);
+}
+let saved;
+let startLang = null;
+try { startLang = localStorage.getItem(LANG_KEY); } catch (e) {}
+useData(Cloud.enabled ? null : readStore(STORE), startLang);
+function persist() {
+  try { localStorage.setItem(LANG_KEY, saved.lang); } catch (e) {}
+  if (Cloud.enabled && (!me || me.role !== "student")) return;  // parents and logged-out visitors keep only the language
+  saved.updated = Date.now();
+  try { localStorage.setItem(STORE, JSON.stringify(saved)); } catch (e) {}
+  if (Cloud.enabled) Cloud.queueSave(saved);
+}
 
-let view = { name: "home" };
+let me = null;          // profile of the logged-in account: { id, role, nickname, link_code }
+let children = null;    // parents: [{ id, nickname, data }] once loaded
+let flash = null;       // { kind: "ok" | "err", msg: () => text } shown at the top of forms and pages
+let recovering = false; // true while choosing a new password from an email link
+let view = { name: Cloud.enabled ? "loading" : "home" };
 // { mode: "practice" | "timed", subjectId, topicId, items: [{q, topic}], i, picked, answers: [], combo, xp, started, deadline }
 let quiz = null;
 let timer = null;
@@ -33,7 +53,10 @@ function subjectMastery(sub) {
   return Math.round(ts.reduce((a, t) => a + (saved.best[t.id] || 0), 0) / ts.length);
 }
 function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
-function go(v) { view = v; render(); window.scrollTo(0, 0); }
+function go(v, keepFlash) { view = v; if (!keepFlash) flash = null; render(); window.scrollTo(0, 0); }
+const locale = () => ({ en: "en-GB", ru: "ru-RU", ky: "ky-KG" }[L()]);
+const dateOf = key => new Date(key + "T12:00:00").toLocaleDateString(locale());
+const errMsg = err => () => T().err[err && err.code] || T().err.generic;
 
 /* ---------- game facts ---------- */
 const TIMED_N = 10;
@@ -104,10 +127,9 @@ function viewSubject(sub) {
 
 function viewTrophies() {
   const lv = levelInfo(saved.xp);
-  const locale = { en: "en-GB", ru: "ru-RU", ky: "ky-KG" }[L()];
   const badges = BADGES.map(b => {
     const at = saved.badges[b.id];
-    return `<li class="badge${at ? " got" : ""}"><span class="ic" aria-hidden="true">${b.icon}</span><span><b>${tx(b.name)}</b><small>${tx(b.desc)}</small><small class="when">${esc(at ? T().earnedOn(new Date(at).toLocaleDateString(locale)) : T().locked)}</small></span></li>`;
+    return `<li class="badge${at ? " got" : ""}"><span class="ic" aria-hidden="true">${b.icon}</span><span><b>${tx(b.name)}</b><small>${tx(b.desc)}</small><small class="when">${esc(at ? T().earnedOn(new Date(at).toLocaleDateString(locale())) : T().locked)}</small></span></li>`;
   }).join("");
   const goals = GOALS.map(g => `<button type="button" data-act="goal" data-arg="${g}" aria-pressed="${saved.goal === g}">${esc(T().goalOpt(g))}</button>`).join("");
   return `${crumbs([{ label: T().home, act: "home" }, { label: T().trophies }])}
@@ -229,16 +251,236 @@ function viewResults() {
     <div class="lesson"><h3>${esc(T().review)}</h3><ul class="review">${list}</ul></div>`;
 }
 
+/* ---------- accounts ---------- */
+const flashBox = () => flash ? `<p class="flash ${flash.kind}" role="${flash.kind === "err" ? "alert" : "status"}">${esc(flash.msg())}</p>` : "";
+// Shows the message inside the form without redrawing it, so what the person typed stays.
+function showFlash(form) {
+  const old = form.querySelector(".flash");
+  if (old) old.outerHTML = flashBox(); else form.insertAdjacentHTML("afterbegin", flashBox());
+}
+const field = (name, label, type, extra = "", hint = "") =>
+  `<label class="field"><span>${esc(label)}</span><input name="${name}" type="${type}" ${extra}>${hint ? `<small>${esc(hint)}</small>` : ""}</label>`;
+const authHead = (title, lede) => `<div class="head"><div class="eyebrow">${esc(T().homeEyebrow)}</div><h1>${esc(title)}</h1>${lede ? `<p class="lede">${esc(lede)}</p>` : ""}</div>`;
+
+function viewLogin() {
+  return `${authHead(T().loginTitle, T().loginLede)}
+    <form class="form" data-form="login">${flashBox()}
+      ${field("email", T().email, "email", 'autocomplete="email" required')}
+      ${field("password", T().password, "password", 'autocomplete="current-password" required')}
+      <div class="go"><button class="btn primary" type="submit">${esc(T().loginBtn)}</button></div>
+    </form>
+    <div class="links"><button type="button" class="link" data-act="signup">${esc(T().toSignup)}</button><button type="button" class="link" data-act="forgot">${esc(T().toForgot)}</button></div>`;
+}
+function viewSignup() {
+  const role = view.role || "student";
+  const roles = ["student", "parent"].map(r => `<button type="button" data-act="role" data-arg="${r}" aria-pressed="${role === r}">${esc(T()[r])}</button>`).join("");
+  return `${authHead(T().signupTitle, T().loginLede)}
+    <form class="form" data-form="signup">${flashBox()}
+      <div class="field"><span>${esc(T().iAm)}</span><div class="seg goals" role="group">${roles}</div></div>
+      ${role === "student" ? field("nickname", T().nickname, "text", 'maxlength="30" autocomplete="nickname" required', T().nickHint) : ""}
+      ${field("email", T().email, "email", 'autocomplete="email" required')}
+      ${field("password", T().password, "password", 'autocomplete="new-password" minlength="8" required', T().pwHint)}
+      ${field("code", T().groupCode, "text", 'autocomplete="off" autocapitalize="characters" required')}
+      <div class="go"><button class="btn primary" type="submit">${esc(T().signupBtn)}</button></div>
+    </form>
+    <div class="links"><button type="button" class="link" data-act="login">${esc(T().toLogin)}</button></div>`;
+}
+function viewForgot() {
+  return `${authHead(T().forgotTitle, T().forgotLede)}
+    <form class="form" data-form="forgot">${flashBox()}
+      ${field("email", T().email, "email", 'autocomplete="email" required')}
+      <div class="go"><button class="btn primary" type="submit">${esc(T().sendLink)}</button></div>
+    </form>
+    <div class="links"><button type="button" class="link" data-act="login">${esc(T().toLogin)}</button></div>`;
+}
+function viewNewPw() {
+  return `${authHead(T().newPwTitle)}
+    <form class="form" data-form="newpw">${flashBox()}
+      ${field("password", T().password, "password", 'autocomplete="new-password" minlength="8" required', T().pwHint)}
+      <div class="go"><button class="btn primary" type="submit">${esc(T().savePw)}</button></div>
+    </form>`;
+}
+
+function viewSettings() {
+  const out = `<div class="go"><button type="button" class="btn" data-act="signout">${esc(T().signOut)}</button></div>`;
+  if (me.role === "parent") {
+    return `${crumbs([{ label: T().parentTitle, act: "parent" }, { label: T().account }])}
+      <div class="head"><h1>${esc(T().account)}</h1><p class="lede">${esc(Cloud.user ? Cloud.user.email : "")}</p></div>${flashBox()}${out}`;
+  }
+  return `${crumbs([{ label: T().home, act: "home" }, { label: T().account }])}
+    <div class="head"><h1>${esc(me.nickname)}</h1><p class="lede">${esc(Cloud.user ? Cloud.user.email : "")}</p></div>${flashBox()}
+    <div class="rules"><h3>${esc(T().linkCodeTitle)}</h3><p class="code">${esc(me.link_code || "")}</p><p class="small">${esc(T().linkCodeHint)}</p>${view.parents !== undefined ? `<p class="small">${esc(T().parentsN(view.parents))}</p>` : ""}</div>
+    <form class="form" data-form="nick">${field("nickname", T().nickname, "text", `maxlength="30" required value="${esc(me.nickname)}"`, T().nickHint)}
+      <div class="go"><button class="btn" type="submit">${esc(T().saveNick)}</button></div></form>
+    <p class="small">${esc(T().sync[Cloud.status])}</p>${out}`;
+}
+
+// A child's saved progress, filled with defaults so old or empty data still renders.
+function childData(c) { const d = Object.assign(defaults(), c.data || {}); d.stats = Object.assign(freshStats(), d.stats); return d; }
+const lastDay = d => Object.keys(d.days).filter(k => d.days[k]).sort().pop();
+const masteryOf = (best, sub) => { const ts = topicsOf(sub); return ts.length ? Math.round(ts.reduce((a, t) => a + (best[t.id] || 0), 0) / ts.length) : 0; };
+
+function viewParent() {
+  const list = children === null ? `<p class="lede">${esc(T().loading)}</p>` : !children.length ? `<p class="lede">${esc(T().noChildren)}</p>` :
+    `<div class="list">${children.map(c => {
+      const d = childData(c), lv = levelInfo(d.xp), last = lastDay(d), streak = streakOf(d.days);
+      return `<button type="button" class="row" data-act="child" data-arg="${c.id}"><span class="name">${esc(c.nickname)}</span><span class="sub">${esc(T().level(lv.level))}: ${esc(lv.title)} · 🔥 ${esc(T().streak(streak))} · ${esc(last ? T().lastActive(dateOf(last)) : T().never)}</span><span class="side">${d.xp}<small>XP</small></span></button>`;
+    }).join("")}</div>`;
+  return `<div class="head"><div class="eyebrow">${esc(T().parent)}</div><h1>${esc(T().parentTitle)}</h1><p class="lede">${esc(T().parentLede)}</p></div>
+    ${flashBox()}${list}
+    <form class="form rules" data-form="link"><h3>${esc(T().linkTitle)}</h3>${field("code", T().linkHint, "text", 'maxlength="12" autocomplete="off" autocapitalize="characters" required')}
+      <div class="go"><button class="btn primary" type="submit">${esc(T().linkBtn)}</button></div></form>`;
+}
+
+function viewChild() {
+  const c = (children || []).find(x => x.id === view.id);
+  if (!c) return viewParent();
+  const d = childData(c), lv = levelInfo(d.xp), last = lastDay(d), streak = streakOf(d.days);
+  const days = [];
+  for (let i = 13; i >= 0; i--) { const t = new Date(); t.setDate(t.getDate() - i); const k = dayKey(t); days.push({ k, n: d.days[k] || 0 }); }
+  const max = Math.max(1, ...days.map(x => x.n));
+  const bars = days.map(x => `<span title="${esc(dateOf(x.k))}: ${x.n}"><i style="height:${Math.round(100 * x.n / max)}%"></i><small>${x.n || ""}</small></span>`).join("");
+  const subs = SUBJECTS.filter(s => s.ready).map(sub => {
+    const m = masteryOf(d.best, sub);
+    const rows = topicsOf(sub).map(t => {
+      const b = d.best[t.id];
+      return `<li><span>${tx(t.title)}</span><span class="side">${b === undefined ? `<span class="pill">${esc(T().notStarted)}</span>` : b >= 80 ? `<span class="pill good">${b}%</span>` : `<span class="pill bad">${b}%</span>`}</span></li>`;
+    }).join("");
+    const extra = [d.best["mixed-" + sub.id] !== undefined ? `${T().mixedBestL}: ${d.best["mixed-" + sub.id]}%` : "", d.timed[sub.id] !== undefined ? `${T().timedBestL}: ${d.timed[sub.id]}%` : ""].filter(Boolean).join(" · ");
+    return `<details class="subj"><summary><b>${tx(sub.name)}</b><span class="meter${m >= 80 ? " done" : ""}"><i style="width:${m}%"></i></span><span class="side">${m}%</span></summary><ul class="topics">${rows}</ul>${extra ? `<p class="small">${esc(extra)}</p>` : ""}</details>`;
+  }).join("");
+  const weak = SUBJECTS.flatMap(s => topicsOf(s)).filter(t => d.best[t.id] !== undefined && d.best[t.id] < 80);
+  const got = BADGES.filter(b => d.badges[b.id]);
+  return `${crumbs([{ label: T().parentTitle, act: "parent" }, { label: c.nickname }])}
+    <div class="head"><h1>${esc(c.nickname)}</h1><p class="lede">${esc(T().level(lv.level))}: ${esc(lv.title)} · ${esc(last ? T().lastActive(dateOf(last)) : T().never)}</p></div>
+    <div class="summary"><div class="stat"><b>${d.xp}</b><span>XP</span></div><div class="stat"><b>🔥 ${streak}</b><span>${esc(T().streak(streak))}</span></div><div class="stat"><b>${d.stats.answered}</b><span>${esc(T().questionsL)}</span></div><div class="stat"><b>${pct(d.stats.right, d.stats.answered)}%</b><span>${esc(T().rightL)}</span></div></div>
+    <div class="lesson"><h3>${esc(T().last14)}</h3><div class="bars" aria-hidden="true">${bars}</div></div>
+    <div class="lesson"><h3>${esc(T().bySubject)}</h3>${subs}</div>
+    ${weak.length ? `<div class="rules"><h3>${esc(T().needsWork)}</h3><ul class="plain">${weak.map(t => `<li>${tx(t.title)}: ${d.best[t.id]}%</li>`).join("")}</ul></div>` : ""}
+    <div class="lesson"><h3>${esc(T().badgesEarned)}</h3>${got.length ? `<p class="gotbadges">${got.map(b => `<span>${b.icon} ${tx(b.name)}</span>`).join("")}</p>` : `<p class="small">${esc(T().noneYet)}</p>`}</div>
+    ${flashBox()}<div class="go"><button type="button" class="btn" data-act="copy" data-arg="${c.id}">${esc(T().copySummary)}</button><button type="button" class="btn quiet" data-act="unlink" data-arg="${c.id}">${esc(view.armed ? T().unlinkConfirm : T().unlink)}</button></div>`;
+}
+
+function summaryText(c) {
+  const d = childData(c), lv = levelInfo(d.xp), last = lastDay(d);
+  const lines = [`${c.nickname} · ${T().level(lv.level)}: ${lv.title} · ${d.xp} XP`, `${T().streak(streakOf(d.days))} · ${last ? T().lastActive(dateOf(last)) : T().never}`,
+    `${T().answeredN(d.stats.answered)} · ${T().accuracy(pct(d.stats.right, d.stats.answered))}`, ""];
+  for (const sub of SUBJECTS.filter(s => s.ready)) lines.push(`${pick(sub.name)}: ${masteryOf(d.best, sub)}%`);
+  return lines.join("\n");
+}
+
+async function onAuth(event, session) {
+  if (event === "PASSWORD_RECOVERY") { recovering = true; go({ name: "newpw" }); }
+  if (!session) {
+    me = null; children = null; recovering = false; STORE = "ort-tutor-v1";
+    useData(null, saved.lang);
+    if (!["signup", "forgot", "login"].includes(view.name)) view = { name: "login" };
+    render();
+    return;
+  }
+  if (me && me.id === session.user.id) return;
+  await loadAccount(session.user);
+}
+async function loadAccount(user) {
+  if (!recovering) { view = { name: "loading" }; render(); }
+  let profile;
+  try { profile = await Cloud.loadProfile(user); }
+  catch (err) { flash = { kind: "err", msg: errMsg(err) }; await Cloud.signOut(); return; }
+  if (profile.role === "student") {
+    STORE = "ort-tutor-v1:" + user.id;
+    const local = readStore(STORE);
+    let cloud = null;
+    try { cloud = await Cloud.loadProgress(); } catch (e) {}
+    // The newer copy wins; progress made offline on this device is sent up.
+    const newest = [local, cloud].filter(Boolean).sort((a, b) => (b.updated || 0) - (a.updated || 0))[0];
+    useData(newest, saved.lang);
+    me = profile;
+    if (newest && newest === local && (!cloud || (cloud.updated || 0) < (local.updated || 0))) Cloud.queueSave(saved);
+  } else {
+    me = profile;
+    loadChildren();
+  }
+  if (recovering) render(); else go({ name: me.role === "parent" ? "parent" : "home" }, true);
+}
+async function loadChildren() {
+  try { children = await Cloud.children(); } catch (err) { children = children || []; flash = { kind: "err", msg: errMsg(err) }; }
+  render();
+}
+
+document.getElementById("app").addEventListener("submit", async e => {
+  e.preventDefault();
+  const form = e.target, kind = form.dataset.form;
+  const v = Object.fromEntries(new FormData(form));
+  const btn = form.querySelector('[type="submit"]');
+  if (btn) btn.disabled = true;
+  flash = null;
+  try {
+    if (kind === "login") { await Cloud.signIn(v.email.trim(), v.password); return; }  // onAuth takes over
+    if (kind === "signup") {
+      const role = view.role || "student", nickname = (v.nickname || "").trim();
+      if (role === "student" && !nickname) throw Object.assign(new Error(), { code: "nickname" });
+      if (v.password.length < 8) throw Object.assign(new Error(), { code: "weakPw" });
+      const res = await Cloud.signUp({ email: v.email.trim(), password: v.password, role, nickname, joinCode: v.code.trim() });
+      if (res.needsConfirm) { flash = { kind: "ok", msg: () => T().needConfirm }; go({ name: "login" }, true); }
+      return;
+    }
+    if (kind === "forgot") { await Cloud.resetPassword(v.email.trim()); flash = { kind: "ok", msg: () => T().linkSent }; showFlash(form); return; }
+    if (kind === "newpw") {
+      if (v.password.length < 8) throw Object.assign(new Error(), { code: "weakPw" });
+      await Cloud.updatePassword(v.password);
+      recovering = false;
+      flash = { kind: "ok", msg: () => T().pwSaved };
+      go({ name: me && me.role === "parent" ? "parent" : "home" }, true);
+      return;
+    }
+    if (kind === "nick") {
+      const nickname = v.nickname.trim();
+      if (!nickname) throw Object.assign(new Error(), { code: "nickname" });
+      await Cloud.setNickname(nickname);
+      me.nickname = nickname;
+      document.getElementById("acct").textContent = nickname;
+      flash = { kind: "ok", msg: () => T().savedOk }; showFlash(form); return;
+    }
+    if (kind === "link") {
+      const name = await Cloud.linkChild(v.code);
+      flash = { kind: "ok", msg: () => T().linked(name) };
+      await loadChildren();
+      return;
+    }
+  } catch (err) {
+    flash = { kind: "err", msg: errMsg(err) };
+    if (form.isConnected) showFlash(form); else render();
+  } finally {
+    if (btn && btn.isConnected) btn.disabled = false;
+  }
+});
+
 /* ---------- render ---------- */
+const PUBLIC_VIEWS = ["login", "signup", "forgot", "newpw", "loading"];
+const PARENT_VIEWS = ["parent", "child", "settings", "newpw", "loading"];
 function render() {
+  // Accounts on: nothing but the login pages until someone logs in, and parents only see their own pages.
+  if (Cloud.enabled && !me && !PUBLIC_VIEWS.includes(view.name)) view = { name: "login" };
+  if (me && me.role === "parent" && !PARENT_VIEWS.includes(view.name)) view = { name: "parent" };
   document.documentElement.lang = L();
   document.getElementById("brand").innerHTML = T().brand;
-  document.getElementById("foot1").textContent = T().foot;
+  document.getElementById("foot1").textContent = Cloud.enabled ? T().footCloud : T().foot;
   document.getElementById("reset").textContent = T().reset;
+  document.getElementById("reset").hidden = Cloud.enabled && !(me && me.role === "student");
+  const acct = document.getElementById("acct");
+  if (acct) { acct.hidden = !me; acct.textContent = me ? (me.role === "student" ? me.nickname : T().account) : ""; }
   document.querySelectorAll(".bar .seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === L())));
   if (timer && !(view.name === "quiz" && quiz && quiz.mode === "timed")) { clearInterval(timer); timer = null; }
   const app = document.getElementById("app");
-  if (view.name === "home") app.innerHTML = viewHome();
+  if (view.name === "loading") app.innerHTML = `<p class="lede">${esc(T().loading)}</p>`;
+  else if (view.name === "login") app.innerHTML = viewLogin();
+  else if (view.name === "signup") app.innerHTML = viewSignup();
+  else if (view.name === "forgot") app.innerHTML = viewForgot();
+  else if (view.name === "newpw") app.innerHTML = viewNewPw();
+  else if (view.name === "settings") app.innerHTML = viewSettings();
+  else if (view.name === "parent") app.innerHTML = viewParent();
+  else if (view.name === "child") app.innerHTML = viewChild();
+  else if (view.name === "home") app.innerHTML = (flash ? flashBox() : "") + viewHome();
   else if (view.name === "subject") app.innerHTML = viewSubject(subject(view.id));
   else if (view.name === "topic") { const sub = subject(view.subjectId); app.innerHTML = viewLesson(sub, sub.topics.find(t => t.id === view.id)); }
   else if (view.name === "quiz") app.innerHTML = viewQuiz();
@@ -290,6 +532,20 @@ document.getElementById("app").addEventListener("click", e => {
   if (!el || el.disabled) return;
   const act = el.dataset.act, arg = el.dataset.arg;
   if (act === "home") go({ name: "home" });
+  else if (act === "login" || act === "signup" || act === "forgot" || act === "parent") go({ name: act });
+  else if (act === "role") { view.role = arg; render(); }
+  else if (act === "signout") Cloud.signOut();
+  else if (act === "child") go({ name: "child", id: arg });
+  else if (act === "unlink") {
+    if (!view.armed) { view.armed = true; render(); setTimeout(() => { if (view.armed) { view.armed = false; render(); } }, 3000); return; }
+    Cloud.unlinkChild(arg).then(() => { children = children.filter(c => c.id !== arg); go({ name: "parent" }); })
+      .catch(err => { flash = { kind: "err", msg: errMsg(err) }; view.armed = false; render(); });
+  }
+  else if (act === "copy") {
+    const c = children.find(x => x.id === arg);
+    const done = () => { flash = { kind: "ok", msg: () => T().copied }; render(); };
+    if (navigator.clipboard) navigator.clipboard.writeText(summaryText(c)).then(done, () => {});
+  }
   else if (act === "trophies") go({ name: "trophies" });
   else if (act === "goal") { saved.goal = Number(arg); persist(); render(); }
   else if (act === "subject") go({ name: "subject", id: arg });
@@ -344,7 +600,12 @@ document.getElementById("app").addEventListener("change", e => {
   const tn = document.querySelector('[data-act="tnext"]');
   if (tn && quiz.i < quiz.items.length - 1) tn.textContent = T().next;
 });
-document.getElementById("brand").addEventListener("click", () => go({ name: "home" }));
+document.getElementById("brand").addEventListener("click", () => go({ name: me && me.role === "parent" ? "parent" : "home" }));
+function openSettings() {
+  go({ name: "settings" });
+  if (me && me.role === "student") Cloud.parentCount().then(n => { if (view.name === "settings") { view.parents = n; render(); } }, () => {});
+}
+document.getElementById("acct")?.addEventListener("click", openSettings);
 document.querySelectorAll(".bar .seg button").forEach(b => b.addEventListener("click", () => {
   saved.lang = b.dataset.lang; persist();
   // A Russian or Kyrgyz grammar topic is hidden in the other language, so step back to its subject.
@@ -365,3 +626,4 @@ document.getElementById("reset").addEventListener("click", e => {
 });
 
 render();
+if (Cloud.enabled) Cloud.start(onAuth);

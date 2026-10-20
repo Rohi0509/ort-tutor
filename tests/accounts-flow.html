@@ -1,0 +1,164 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>accounts test</title><link rel="stylesheet" href="../css/styles.css"></head>
+<body>
+<!-- Accounts flow test with an in-memory stand-in for Supabase (same rules as supabase/schema.sql). Run in headless Chrome:
+     chrome --headless=new --allow-file-access-from-files --user-data-dir=<fresh tmp dir> --virtual-time-budget=30000 --dump-dom file:///<repo>/tests/accounts-flow.html
+     It prints PASS/FAIL lines into the page. -->
+<div class="bar"><div class="wrap"><button type="button" class="brand" id="brand"></button><span class="spacer"></span><button type="button" class="acct" id="acct" hidden></button>
+  <div class="seg"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">Рус</button><button type="button" data-lang="ky">Кыр</button></div></div></div>
+<div class="wrap"><main id="app"></main><footer><p id="foot1"></p><p><button type="button" class="btn quiet" id="reset"></button></p></footer></div>
+<pre id="out"></pre>
+<script>
+try { localStorage.clear(); } catch (e) {}
+const DB = { users: [], profiles: [], progress: [], links: [], code: "ORT-TEST" };
+let current = null, listener = null, uid = 0;
+const fire = ev => listener && listener(ev, current ? { user: current } : null);
+const err = message => ({ data: null, error: { message } });
+function visible(table) {
+  const me = current && current.id;
+  const kids = DB.links.filter(l => l.parent_id === me).map(l => l.student_id);
+  if (table === "profiles") return DB.profiles.filter(p => p.id === me || kids.includes(p.id));
+  if (table === "progress") return DB.progress.filter(p => p.user_id === me || kids.includes(p.user_id));
+  if (table === "parent_links") return DB.links.filter(l => l.parent_id === me || l.student_id === me);
+}
+function query(table) {
+  const f = []; let op = "select", payload = null;
+  const q = {
+    select() { return q; }, eq(c, v) { f.push(r => r[c] === v); return q; }, in(c, vs) { f.push(r => vs.includes(r[c])); return q; },
+    update(p) { op = "update"; payload = p; return q; }, delete() { op = "delete"; return q; },
+    upsert(row) { op = "upsert"; payload = row; return q; },
+    maybeSingle() { q.single = true; return q; },
+    then(res, rej) { return Promise.resolve(run()).then(res, rej); }
+  };
+  function run() {
+    if (!current) return err("not logged in");
+    const rows = visible(table).filter(r => f.every(fn => fn(r)));
+    if (op === "select") return { data: q.single ? rows[0] || null : rows.map(r => ({ ...r })), error: null };
+    if (op === "update") { rows.filter(r => r.id === current.id).forEach(r => Object.assign(r, payload)); return { data: null, error: null }; }
+    if (op === "delete") { DB.links = DB.links.filter(l => !rows.includes(l)); return { data: null, error: null }; }
+    if (op === "upsert") {
+      if (payload.user_id !== current.id) return err("RLS");
+      const ex = DB.progress.find(p => p.user_id === payload.user_id);
+      if (ex) Object.assign(ex, payload); else DB.progress.push({ ...payload });
+      return { data: null, error: null };
+    }
+  }
+  return q;
+}
+const mock = {
+  auth: {
+    onAuthStateChange(cb) { listener = cb; setTimeout(() => fire("INITIAL_SESSION"), 0); return { data: { subscription: {} } }; },
+    async signUp({ email, password, options }) {
+      const m = options.data;
+      if (DB.users.find(u => u.email === email)) return err("User already registered");
+      if (String(m.join_code).toUpperCase() !== DB.code) return err("Database error saving new user");
+      const u = { id: "u" + (++uid), email, password };
+      DB.users.push(u);
+      DB.profiles.push({ id: u.id, role: m.role, nickname: m.nickname, link_code: m.role === "student" ? "ABC23" + uid : null });
+      current = u; setTimeout(() => fire("SIGNED_IN"), 0);
+      return { data: { session: {}, user: u }, error: null };
+    },
+    async signInWithPassword({ email, password }) {
+      const u = DB.users.find(x => x.email === email && x.password === password);
+      if (!u) return err("Invalid login credentials");
+      current = u; setTimeout(() => fire("SIGNED_IN"), 0); return { data: {}, error: null };
+    },
+    async signOut() { current = null; setTimeout(() => fire("SIGNED_OUT"), 0); return { error: null }; },
+    async resetPasswordForEmail() { return { data: {}, error: null }; },
+    async updateUser({ password }) { current.password = password; return { data: {}, error: null }; }
+  },
+  from: query,
+  async rpc(name, { code }) {
+    const me = DB.profiles.find(p => p.id === current.id);
+    if (me.role !== "parent") return err("NOT_PARENT: x");
+    const kid = DB.profiles.find(p => p.role === "student" && p.link_code === code.replace(/[^A-Za-z0-9]/g, "").toUpperCase());
+    if (!kid) return err("NO_CHILD: x");
+    if (!DB.links.find(l => l.parent_id === me.id && l.student_id === kid.id)) DB.links.push({ parent_id: me.id, student_id: kid.id });
+    return { data: kid.nickname, error: null };
+  }
+};
+window.supabase = { createClient: () => mock };
+window.APP_CONFIG = { SUPABASE_URL: "https://test.supabase.co", SUPABASE_ANON_KEY: "test-key" };
+</script>
+<script src="../js/auth.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/game.js"></script>
+<script src="../js/subjects.js"></script>
+<script src="../js/data/math.js"></script>
+<script src="../js/data/analogies.js"></script>
+<script src="../js/data/sentences.js"></script>
+<script src="../js/data/reading.js"></script>
+<script src="../js/data/grammar.js"></script>
+<script src="../js/app.js"></script>
+<script>
+const out = [];
+const ok = (c, m) => out.push((c ? "PASS " : "FAIL ") + m);
+const $ = s => document.querySelector(s);
+const wait = (ms = 80) => new Promise(r => setTimeout(r, ms));
+const click = s => { const el = typeof s === "string" ? $(s) : s; if (!el) throw new Error("missing " + s); el.click(); };
+const fill = (name, v) => { const el = $(`.form input[name="${name}"]`); if (!el) throw new Error("missing field " + name); el.value = v; };
+const submit = () => $(".form").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+const app = () => $("#app").textContent;
+const flashText = () => ($(".flash") || {}).textContent || "";
+(async () => {
+  try {
+    await wait();
+    ok(!!$('[data-form="login"]'), "signed out shows log in");
+    ok($("#acct").hidden && $("#reset").hidden, "account button and reset hidden when signed out");
+    click('[data-act="signup"]');
+    fill("email", "kid@test.com"); fill("password", "secret123"); fill("code", "ORT-TEST"); fill("nickname", " ");
+    submit(); await wait();
+    ok(/nickname/i.test(flashText()), "student needs a nickname: " + flashText());
+    fill("nickname", "Aibek"); fill("password", "short"); submit(); await wait();
+    ok(/8 characters/.test(flashText()), "short password rejected");
+    fill("password", "secret123"); fill("code", "WRONG"); submit(); await wait();
+    ok(/group code/i.test(flashText()), "wrong group code: " + flashText());
+    fill("code", "ort-test"); submit(); await wait(250);
+    ok(me && me.role === "student" && view.name === "home", "student signed in after sign up and sees home");
+    ok(!$("#acct").hidden && $("#acct").textContent === "Aibek", "account button shows nickname");
+    // Answer one question right and check it reaches the account.
+    click('[data-act="subject"][data-arg="math"]'); click('[data-act="topic"]'); click('[data-act="start"]');
+    const r = document.getElementById("opt-" + quiz.items[0].q.ans); r.checked = true; r.dispatchEvent(new Event("change", { bubbles: true }));
+    click('[data-act="check"]');
+    await wait(1800);
+    ok(DB.progress.length === 1 && DB.progress[0].user_id === "u1" && DB.progress[0].data.xp === 10, "XP saved to the account");
+    ok(localStorage.getItem("ort-tutor-v1:u1") && !localStorage.getItem("ort-tutor-v1"), "local copy kept per account");
+    click("#acct"); await wait();
+    ok(app().includes("ABC231") && app().includes("kid@test.com"), "account page shows link code and email");
+    ok(/No parent account/.test(app()), "no parents linked yet");
+    fill("nickname", "Aibek K"); submit(); await wait();
+    ok(DB.profiles[0].nickname === "Aibek K" && me.nickname === "Aibek K", "nickname change saved");
+    click('[data-act="signout"]'); await wait(150);
+    ok(!me && !!$('[data-form="login"]') && saved.xp === 0, "log out returns to log in with no progress showing");
+
+    // Parent
+    click('[data-act="signup"]'); click('[data-act="role"][data-arg="parent"]');
+    ok(!$('.form input[name="nickname"]'), "no nickname for parents");
+    fill("email", "mum@test.com"); fill("password", "parent123"); fill("code", "ORT-TEST"); submit(); await wait(250);
+    ok(me && me.role === "parent" && view.name === "parent", "parent signed in and sees parent page");
+    ok(/No children linked/.test(app()), "no children yet");
+    click("#brand"); ok(view.name === "parent", "parent stays on parent pages");
+    fill("code", "zzz-999"); submit(); await wait(150);
+    ok(/No child found/.test(flashText()), "wrong link code: " + flashText());
+    fill("code", "abc-231"); submit(); await wait(250);
+    ok(/Aibek K is now linked/.test(flashText()) && !!$('[data-act="child"]'), "child linked and listed");
+    click('[data-act="child"]'); await wait();
+    ok(app().includes("Aibek K") && app().includes("Last 14 days") && /10\s*XP/.test(app()), "parent sees the child's progress");
+    ok(!$('[data-act="start"]') && !$('[data-act="topic"]'), "parent page has no quiz buttons");
+    click('[data-act="unlink"]'); click('[data-act="unlink"]'); await wait(150);
+    ok(DB.links.length === 0 && /No children linked/.test(app()), "unlink child");
+    click("#acct"); await wait(); click('[data-act="signout"]'); await wait(150);
+
+    // Student logs back in
+    fill("email", "kid@test.com"); fill("password", "wrong"); submit(); await wait(150);
+    ok(/wrong/.test(flashText()), "wrong password message: " + flashText());
+    fill("password", "secret123"); submit(); await wait(250);
+    ok(me && saved.xp === 10, "student progress back after log in");
+    // Russian interface on the login page
+    click('[data-act="trophies"]'); document.querySelector('.bar [data-lang="ru"]').click();
+    ok(/Награды/.test(app()), "language switch works when logged in");
+  } catch (e) { out.push("ERROR " + e.stack); }
+  document.getElementById("out").textContent = "RESULTS\n" + out.join("\n");
+})();
+</script>
+</body></html>
