@@ -12,7 +12,9 @@ It works in Kyrgyz, Russian and English. The grammar section is different for ea
 | Reading comprehension | 3 (one text per topic) | 12 |
 | Practical grammar | 3 Russian + 3 Kyrgyz | 15 + 15 |
 
-Each subject also has a mixed practice of 8 random questions.
+Each subject also has a mixed practice of 8 random questions and a **timed challenge**: 10 mixed questions against the clock (1 minute each, 2 for reading), with answers shown only at the end, like the real test.
+
+**Game:** students earn XP for right answers (with a bonus for 3 or more in a row), mastering a topic, reaching their daily goal and doing well on timed challenges. XP raises their level, from Beginner to ORT Legend. There are 15 badges to collect, a day streak, and a daily goal they can set (10, 20, 30 or 50 questions). The level card on the home screen opens the Trophies page.
 
 The folder also holds **ORT Mock Test 1** (`mock-test/index.html`): a 43-question practice Main Test with a timer and answer key, in Kyrgyz and Russian.
 
@@ -55,6 +57,7 @@ Open this folder in Claude Code (`cd ort-tutor` then `claude`). `CLAUDE.md` desc
 index.html          the tutor page; loads the files below in order
 css/styles.css      all styles and the light/dark colour tokens
 js/ui.js            interface text in en/ru/ky, answer letters, comparison choices
+js/game.js          XP, levels, badges, streaks, celebrations
 js/subjects.js      creates the SUBJECTS list
 js/data/*.js        one file per subject: lessons and questions
 js/app.js           state, screens and buttons

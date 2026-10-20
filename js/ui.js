@@ -19,7 +19,18 @@ const UI = {
     msgHi: "Strong result. Move on to the next topic.", msgMid: "Good start. Read through the mistakes below and try again.", msgLo: "Reread the lesson, then try the quiz again.",
     retry: "Try again", nextTopic: "Next topic", reviewLesson: "Review the lesson", review: "Your answers",
     foot: "Practice material written in the ORT format. It is not official ЦООМО material. Your progress is saved in this browser only.",
-    reset: "Reset my progress", resetConfirm: "Tap again to erase all scores"
+    reset: "Reset my progress", resetConfirm: "Tap again to erase all scores",
+    level: n => `Level ${n}`, xpOf: (a, b) => `${a} / ${b} XP`, streak: n => `${n}-day streak`, todayGoal: (a, g) => `Today ${a}/${g}`,
+    badgesN: (a, n) => `${a}/${n} badges`, trophies: "Trophies", trophiesLede: "Earn XP for every right answer, level up, and collect badges.",
+    badges: "Badges", locked: "Not yet", earnedOn: d => `Earned ${d}`,
+    levelUp: (n, t) => `Level up! Level ${n}: ${t}`, newBadge: "New badge", goalHit: n => `Daily goal reached! +${n} XP`,
+    topicMastered: n => `Topic mastered! +${n} XP`, xpGained: n => `+${n} XP`,
+    goal: "Daily goal", goalOpt: n => `${n} questions`,
+    howXp: "How to earn XP",
+    xpRules: x => [`${x.right} XP for each right answer`, `+${x.combo} XP bonus from the 3rd right answer in a row`, `+${x.mastered} XP the first time you master a topic (80%)`, `+${x.goal} XP when you reach your daily goal`, `+${x.timedBonus} XP for 80% or more on a timed challenge`],
+    timed: "Timed challenge", timedSub: (n, m) => `${n} mixed questions in ${m} minutes. No answers shown until the end, like the real test.`,
+    timeLeft: "Time left", timeUp: "Time is up.", timeUsed: (m, s) => `Time used: ${m} min ${s} s`, noAnswer: "No answer.",
+    skip: "Skip", finishNow: "Finish the test"
   },
   ru: {
     brand: "Репетитор <span>ОРТ</span>", home: "Предметы",
@@ -38,7 +49,18 @@ const UI = {
     msgHi: "Отличный результат. Переходите к следующей теме.", msgMid: "Хорошее начало. Разберите ошибки ниже и попробуйте ещё раз.", msgLo: "Перечитайте теорию и пройдите тест снова.",
     retry: "Пройти ещё раз", nextTopic: "Следующая тема", reviewLesson: "Вернуться к теории", review: "Ваши ответы",
     foot: "Задания составлены в формате ОРТ для тренировки. Это не официальные материалы ЦООМО. Прогресс сохраняется только в этом браузере.",
-    reset: "Сбросить мой прогресс", resetConfirm: "Нажмите ещё раз, чтобы стереть результаты"
+    reset: "Сбросить мой прогресс", resetConfirm: "Нажмите ещё раз, чтобы стереть результаты",
+    level: n => `Уровень ${n}`, xpOf: (a, b) => `${a} / ${b} XP`, streak: n => `Дней подряд: ${n}`, todayGoal: (a, g) => `Сегодня ${a}/${g}`,
+    badgesN: (a, n) => `Значки: ${a}/${n}`, trophies: "Награды", trophiesLede: "Получайте XP за каждый верный ответ, повышайте уровень и собирайте значки.",
+    badges: "Значки", locked: "Пока нет", earnedOn: d => `Получен ${d}`,
+    levelUp: (n, t) => `Новый уровень! Уровень ${n}: ${t}`, newBadge: "Новый значок", goalHit: n => `Дневная цель выполнена! +${n} XP`,
+    topicMastered: n => `Тема освоена! +${n} XP`, xpGained: n => `+${n} XP`,
+    goal: "Дневная цель", goalOpt: n => `${n} вопросов`,
+    howXp: "Как получить XP",
+    xpRules: x => [`${x.right} XP за каждый верный ответ`, `+${x.combo} XP бонус начиная с 3-го верного ответа подряд`, `+${x.mastered} XP, когда тема впервые освоена (80%)`, `+${x.goal} XP за выполнение дневной цели`, `+${x.timedBonus} XP за 80% и больше в испытании на время`],
+    timed: "Испытание на время", timedSub: (n, m) => `${n} смешанных вопросов за ${m} мин. Ответы показываются только в конце, как на настоящем тесте.`,
+    timeLeft: "Осталось", timeUp: "Время вышло.", timeUsed: (m, s) => `Затрачено: ${m} мин ${s} с`, noAnswer: "Нет ответа.",
+    skip: "Пропустить", finishNow: "Завершить тест"
   },
   ky: {
     brand: "ЖРТ <span>репетитору</span>", home: "Предметтер",
@@ -57,7 +79,18 @@ const UI = {
     msgHi: "Мыкты натыйжа. Кийинки темага өтүңүз.", msgMid: "Жакшы башталыш. Төмөнкү каталарды карап чыгып, кайра аракет кылыңыз.", msgLo: "Теорияны кайра окуп, тестти дагы бир жолу өтүңүз.",
     retry: "Кайра өтүү", nextTopic: "Кийинки тема", reviewLesson: "Теорияга кайтуу", review: "Сиздин жоопторуңуз",
     foot: "Бул тапшырмалар ЖРТнын форматында машыгуу үчүн даярдалган. Алар ЦООМОнун расмий материалдары эмес. Прогресс ушул браузерде гана сакталат.",
-    reset: "Прогрессимди тазалоо", resetConfirm: "Бардык натыйжаларды өчүрүү үчүн дагы бир басыңыз"
+    reset: "Прогрессимди тазалоо", resetConfirm: "Бардык натыйжаларды өчүрүү үчүн дагы бир басыңыз",
+    level: n => `${n}-деңгээл`, xpOf: (a, b) => `${a} / ${b} XP`, streak: n => `Катары менен ${n} күн`, todayGoal: (a, g) => `Бүгүн ${a}/${g}`,
+    badgesN: (a, n) => `Белгилер: ${a}/${n}`, trophies: "Сыйлыктар", trophiesLede: "Ар бир туура жооп үчүн XP алыңыз, деңгээлиңизди көтөрүп, белгилерди чогултуңуз.",
+    badges: "Белгилер", locked: "Азырынча жок", earnedOn: d => `Алынды: ${d}`,
+    levelUp: (n, t) => `Жаңы деңгээл! ${n}-деңгээл: ${t}`, newBadge: "Жаңы белги", goalHit: n => `Күнүмдүк максат аткарылды! +${n} XP`,
+    topicMastered: n => `Тема өздөштүрүлдү! +${n} XP`, xpGained: n => `+${n} XP`,
+    goal: "Күнүмдүк максат", goalOpt: n => `${n} суроо`,
+    howXp: "XPни кантип алса болот",
+    xpRules: x => [`Ар бир туура жооп үчүн ${x.right} XP`, `Катары менен 3-туура жооптон баштап +${x.combo} XP бонус`, `Тема биринчи жолу өздөштүрүлгөндө +${x.mastered} XP (80%)`, `Күнүмдүк максат аткарылганда +${x.goal} XP`, `Убакытка сыноодо 80% же андан көп үчүн +${x.timedBonus} XP`],
+    timed: "Убакытка сыноо", timedSub: (n, m) => `${m} мүнөттө ${n} аралаш суроо. Жооптор чыныгы тесттегидей аягында гана көрсөтүлөт.`,
+    timeLeft: "Калган убакыт", timeUp: "Убакыт бүттү.", timeUsed: (m, s) => `Кеткен убакыт: ${m} мүн ${s} сек`, noAnswer: "Жооп берилген жок.",
+    skip: "Өткөрүп жиберүү", finishNow: "Тестти бүтүрүү"
   }
 };
 

@@ -145,6 +145,43 @@ button.row:hover { background: var(--accent-soft); }
 .review p { margin: 0; }
 .review .why { color: var(--muted); }
 
+/* Game: player card, trophies, toasts and confetti */
+.meter.gold i { background: var(--gold); }
+.player { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: baseline; text-align: left; width: 100%; padding: 14px 16px; background: var(--sheet); border: 1px solid var(--line); border-radius: 12px; color: var(--ink); font: inherit; cursor: pointer; }
+.player:hover { border-color: var(--accent); }
+.player .lvl { font-family: var(--f-display); font-size: 18px; }
+.player .lvl b { color: var(--accent); }
+.player .xp, .lvlcard .xp { font-family: var(--f-mono); font-size: 13px; color: var(--muted); text-align: right; }
+.player .meter { grid-column: 1 / -1; height: 8px; }
+.player .chips { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--muted); }
+.player .chips .on { color: var(--ink); font-weight: 700; }
+.lvlcard { display: grid; gap: 6px; }
+.lvlcard .meter { height: 10px; }
+.goals { display: flex; flex-wrap: wrap; gap: 6px; border: 0; border-radius: 0; overflow: visible; }
+.goals button { border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--ink); font: 700 13px var(--f-body); padding: 6px 12px; cursor: pointer; }
+.goals button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--sheet); }
+.badges { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.badge { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: start; padding: 12px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); }
+.badge .ic { font-size: 28px; line-height: 1.2; filter: grayscale(1); opacity: .45; }
+.badge b { display: block; }
+.badge small { display: block; font-size: 13px; }
+.badge .when { margin-top: 4px; font-size: 12px; }
+.badge.got { border-style: solid; border-color: var(--gold); background: var(--sheet); color: var(--ink); }
+.badge.got .ic { filter: none; opacity: 1; }
+.badge.got .when { color: var(--gold); }
+.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.gain { color: var(--gold); font-weight: 700; font-family: var(--f-mono); }
+.big-gain { margin: 0; font-size: 20px; }
+.clock b { font-family: var(--f-mono); color: var(--ink); font-size: 16px; }
+.dots i.seen { background: var(--muted); }
+.toasts { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; display: grid; gap: 8px; width: min(92vw, 420px); pointer-events: none; }
+.toast { background: var(--ink); color: var(--paper); padding: 10px 14px; border-radius: 10px; font-weight: 700; box-shadow: 0 6px 20px rgb(0 0 0 / .2); animation: toast-in .25s ease-out; }
+.toast.big { background: var(--gold); color: #1d2a33; font-size: 17px; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px); } }
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 19; overflow: hidden; }
+.confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; animation: fall 2.4s ease-in forwards; }
+@keyframes fall { to { transform: translate(var(--dx), 105vh) rotate(var(--r)); opacity: .8; } }
+
 footer { padding-block: 0 48px; color: var(--muted); font-size: 14px; display: grid; gap: 8px; }
 footer p { margin: 0; max-width: 65ch; }
 @media (max-width: 480px) {

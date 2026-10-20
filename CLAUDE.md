@@ -9,7 +9,9 @@ A static study app for the Main Test of Kyrgyzstan's ORT entrance exam (math, an
 
 ## Structure
 
-- `index.html` loads classic `<script>` tags in this order: `js/ui.js`, `js/subjects.js`, `js/data/*.js`, `js/app.js`. There are no ES modules, so the page keeps working from `file://`. The order of the data scripts is the order subjects appear on the home screen. `tools/check.js` reads the same order from `index.html`.
+- `index.html` loads classic `<script>` tags in this order: `js/ui.js`, `js/game.js`, `js/subjects.js`, `js/data/*.js`, `js/app.js`. There are no ES modules, so the page keeps working from `file://`. The order of the data scripts is the order subjects appear on the home screen. `tools/check.js` loads every `js/` script in the order `index.html` lists them.
+- `js/game.js`: `XP` rules, `LEVEL_TITLES` (level n starts at 50·n·(n−1) XP), `BADGES` (`{ id, icon, name, desc, test(facts) }`, text in en/ru/ky), `award()`, day keys and `streakOf()`, toasts and confetti. `app.js` decides when XP is earned (`check`, `finish`, `finishTimed`) and builds the badge facts in `gameFacts()`. Keep the XP numbers and the `xpRules` text in `ui.js` in sync (the text reads them from `XP`).
+- Timed challenge: `TIMED_N` = 10 random questions per subject, 1 minute each (2 for reading). No feedback until the end; unanswered questions count as wrong. Best score per subject is in `saved.timed`.
 - `js/ui.js`: `LETTERS` (Cyrillic А Б В Г Д, as on the ORT answer sheet), `UI` (interface strings per language) and `CMP_OPTS` (the four fixed comparison answers).
 - `js/subjects.js`: `const SUBJECTS = []`. Each data file calls `SUBJECTS.push({...})`.
 - `js/app.js`: state, a `render()` that switches on `view.name` (`home`, `subject`, `topic`, `quiz`, `results`), and delegated click handlers using `data-act` / `data-arg` attributes.
@@ -50,6 +52,7 @@ SUBJECTS.push({
 - Follow the ORT format. Math part 1 is quantity comparison (Column А vs Column Б; А greater, Б greater, В equal, Г not enough information). The other tasks have 5 options labelled А–Д.
 - Every question has a `why` that explains the answer in one or two plain sentences, and names the trap when there is one.
 - Write all three languages for every new item, use Kyrgyz and Kyrgyzstan context (som, Bishkek, Issyk-Kul) where it fits, and run `node tools/check.js`.
-- Progress lives in `localStorage` under `ort-tutor-v1` as `{ lang, best: { topicId: percent } }`. A topic counts as mastered at 80%. Renaming a topic id resets that topic's saved score.
+- Progress lives in `localStorage` under `ort-tutor-v1` as `{ lang, best: { topicId: percent }, xp, badges: { id: timestamp }, stats, days: { "YYYY-MM-DD": answers }, goal, timed: { subjectId: percent } }`. Older saves only have `lang` and `best`; the defaults in `app.js` fill in the rest, so keep any new field optional. A topic counts as mastered at 80%. Renaming a topic id resets that topic's saved score.
+- GitHub: commit as Rohi0509 (`175015553+Rohi0509@users.noreply.github.com`, set in this repo's git config), remote `https://Rohi0509@github.com/Rohi0509/ort-tutor.git`. Never use the business identity.
 - Every write to `localStorage` is wrapped in try/catch, so the page still works when storage is blocked.
 - The content is practice material in the ORT format, not official ЦООМО material. Have Kyrgyz text reviewed by a fluent speaker.

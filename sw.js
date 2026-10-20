@@ -1,10 +1,10 @@
 /* Service worker: makes the tutor and the mock test work offline once opened.
    Every request is answered from the cache straight away and refreshed from the network in the
    background, so edits reach students on their next visit. Bump VERSION to drop old caches. */
-const VERSION = "ort-tutor-v1";
+const VERSION = "ort-tutor-v2";
 const FILES = [
   "./", "index.html", "manifest.webmanifest", "css/styles.css",
-  "js/ui.js", "js/subjects.js", "js/app.js",
+  "js/ui.js", "js/game.js", "js/subjects.js", "js/app.js",
   "js/data/math.js", "js/data/analogies.js", "js/data/sentences.js", "js/data/reading.js", "js/data/grammar.js",
   "mock-test/index.html",
   "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"
