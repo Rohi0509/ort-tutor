@@ -20,7 +20,8 @@ A static study app for the Main Test of Kyrgyzstan's ORT entrance exam (math, an
 - `js/subjects.js`: `const SUBJECTS = []`. Each data file calls `SUBJECTS.push({...})`.
 - `js/app.js`: state, a `render()` that switches on `view.name` (`home`, `subject`, `topic`, `quiz`, `results`), and delegated click handlers using `data-act` / `data-arg` attributes.
 - PWA: `manifest.webmanifest`, `icons/` and `sw.js` make the app installable and offline-capable when served over http(s) (not from `file://`). `sw.js` precaches every file in its `FILES` list, so add any new data file there too, and bump `VERSION` when removing or renaming files.
-- `css/styles.css`: colour tokens on `:root` with dark-mode overrides. Styles use only the tokens. The palette and PT Serif/Sans/Mono fonts match the mock test, so keep the two looking like one set.
+- `css/styles.css`: colour tokens on `:root` with dark-mode overrides; styles use only the tokens. The look follows the user's GCSE Tutor (squared paper, cards, pill buttons, bottom tab bar, goal ring, lime "highlighter" for mastery and gold for XP) with fonts that cover Kyrgyz Cyrillic: Rubik (headings), Nunito (text), JetBrains Mono (numbers). The GCSE fonts have no Cyrillic, so don't switch to them. The mock test still has its own older look.
+- Screens (`view.name`): `home` (Today: greeting, goal ring, level card, next topic, timed challenge, subjects), `subjects`, `subject`, `topic` (lesson), `quiz`, `results`, `trophies`, `settings` (Account), plus the account pages. The tab bar (`#tabbar`: Today, Subjects, Trophies, Account) and level chip show for students and when accounts are off; parents get neither. The tab bar hides during a quiz (`body.quizzing`).
 
 ## Data shape
 

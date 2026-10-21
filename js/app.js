@@ -81,63 +81,91 @@ function countAnswers(n, right, subjectId) {
 }
 
 /* ---------- views ---------- */
+const ICONS = { math: "📐", analogies: "🔗", sentences: "✍️", reading: "📖", grammar: "🔤" };
+const iconOf = sub => ICONS[sub.id] || "📘";
+// A back link to the nearest screen above this one (the last part that has an action).
 function crumbs(parts) {
-  return `<nav class="crumbs">${parts.map(p => p.act ? `<button type="button" data-act="${p.act}"${p.arg ? ` data-arg="${p.arg}"` : ""}>${esc(p.label)}</button>` : `<span>${esc(p.label)}</span>`).join("<span>/</span>")}</nav>`;
+  const p = parts.filter(x => x.act).pop();
+  return p ? `<button type="button" class="back" data-act="${p.act}"${p.arg ? ` data-arg="${p.arg}"` : ""}>← ${esc(p.label)}</button>` : "";
 }
-
-function playerCard() {
-  const lv = levelInfo(saved.xp), today = todayCount(), streak = streakOf(saved.days);
-  const earned = BADGES.filter(b => saved.badges[b.id]).length;
-  return `<button type="button" class="player" data-act="trophies">
-    <span class="lvl"><b>${esc(T().level(lv.level))}</b> ${esc(lv.title)}</span>
-    <span class="xp">${esc(T().xpOf(saved.xp - lv.from, lv.to - lv.from))}</span>
-    <span class="meter gold"><i style="width:${lv.pct}%"></i></span>
-    <span class="chips"><span${streak ? ' class="on"' : ""}>🔥 ${esc(T().streak(streak))}</span><span${today >= saved.goal ? ' class="on"' : ""}>🎯 ${esc(T().todayGoal(Math.min(today, saved.goal), saved.goal))}</span><span>🏆 ${esc(T().badgesN(earned, BADGES.length))}</span></span>
-  </button>`;
+const bar = (p, cls = "") => `<div class="bar${cls ? " " + cls : ""}"><i style="width:${Math.max(0, Math.min(100, p))}%"></i></div>`;
+const topicState = b => b === undefined ? "new" : b >= 80 ? "mastered" : "learning";
+function ring(n, goal) {
+  const r = 32, c = 2 * Math.PI * r, f = Math.min(1, n / goal);
+  return `<div class="ring${n >= goal ? " done" : ""}" role="img" aria-label="${esc(T().todayGoal(Math.min(n, goal), goal))}"><svg viewBox="0 0 76 76"><circle class="track" cx="38" cy="38" r="${r}"/><circle class="fill" cx="38" cy="38" r="${r}" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - f)).toFixed(1)}"/></svg><span><b>${Math.min(n, goal)}</b>/${goal}</span></div>`;
+}
+const readyTopics = () => SUBJECTS.filter(s => s.ready).flatMap(s => topicsOf(s).map(t => ({ s, t })));
+// The topic to work on next: one already started but not mastered, else the first one not started.
+function nextTopic() {
+  const all = readyTopics();
+  return all.find(x => saved.best[x.t.id] !== undefined && saved.best[x.t.id] < 80) || all.find(x => saved.best[x.t.id] === undefined) || null;
+}
+function levelCard() {
+  const lv = levelInfo(saved.xp), earned = BADGES.filter(b => saved.badges[b.id]).length;
+  return `<button type="button" class="card level" data-act="trophies">
+    <div class="row2"><span class="lvtag">${esc(T().level(lv.level))}</span><span class="num">🏅 ${earned}<small>/${BADGES.length}</small></span></div>
+    <h2>${esc(lv.title)}</h2>${bar(lv.pct, "xp")}
+    <p>${esc(T().xpToNext(saved.xp - lv.from, lv.to - lv.from, lv.level + 1))} · ${esc(T().seeBadges)}</p></button>`;
+}
+function statStrip() {
+  const all = readyTopics(), m = all.filter(x => (saved.best[x.t.id] || 0) >= 80).length;
+  return `<div class="stats"><div class="stat fire"><b>🔥 ${streakOf(saved.days)}</b><span>${esc(T().statStreak)}</span></div><div class="stat"><b>${saved.xp}</b><span>${esc(T().statXp)}</span></div><div class="stat"><b>${m}<small>/${all.length}</small></b><span>${esc(T().statMastered)}</span></div></div>`;
 }
 
 function viewHome() {
-  const rows = SUBJECTS.map(s => {
-    if (!s.ready) return `<div class="row off"><span class="name">${tx(s.name)}</span><span class="sub">${tx(s.blurb)}</span><span class="side"><span class="pill">${esc(T().soon)}</span></span></div>`;
-    const m = subjectMastery(s);
-    return `<button type="button" class="row" data-act="subject" data-arg="${s.id}"><span class="name">${tx(s.name)}</span><span class="sub">${tx(s.blurb)} ${esc(T().topicsN(topicsOf(s).length))}.</span><span class="meter${m >= 80 ? " done" : ""}"><i style="width:${m}%"></i></span><span class="side">${m}%<small>${esc(T().mastery)}</small></span></button>`;
+  const today = todayCount(), left = saved.goal - today;
+  const date = new Date().toLocaleDateString(locale(), { weekday: "long", day: "numeric", month: "long" });
+  const nx = nextTopic(), started = nx && saved.best[nx.t.id] !== undefined;
+  const next = nx
+    ? `<button type="button" class="card next" data-act="topic" data-arg="${nx.t.id}"><span class="tag">${esc(started ? T().keepGoing : T().nextTopic)}</span><h2>${tx(nx.t.title)}</h2><p>${iconOf(nx.s)} ${tx(nx.s.name)}${started ? ` · ${esc(T().best)} ${saved.best[nx.t.id]}%` : ""}</p><span class="more">${esc(T().learnIt)}</span></button>`
+    : `<div class="card next"><span class="tag">🏆</span><h2>${esc(T().allDone)}</h2></div>`;
+  const subs = SUBJECTS.filter(s => s.ready);
+  const race = `<div class="card timed"><span class="tag">⏱ ${esc(T().timed)}</span><h2>${esc(T().raceTitle)}</h2><p>${esc(T().raceSub)}</p>
+    <div class="pills">${subs.map(s => `<button type="button" class="pick" data-act="timed" data-arg="${s.id}">${iconOf(s)} ${tx(s.name)}${saved.timed[s.id] !== undefined ? ` · ${saved.timed[s.id]}%` : ""}</button>`).join("")}</div></div>`;
+  const all = readyTopics(), m = all.filter(x => (saved.best[x.t.id] || 0) >= 80).length;
+  const subjects = `<button type="button" class="card" data-act="subjects"><div class="row2"><h2>${esc(T().home)}</h2><span class="num">${m}<small>/${all.length}</small></span></div>${bar(pct(m, all.length))}<p>${esc(T().subjectsGo)}</p></button>`;
+  return `<div class="hello"><div class="head"><div class="eyebrow">${esc(date)}</div><h1>${esc(T().hi(me && me.nickname))}</h1><p class="sub">${esc(left > 0 ? T().goalLeft(left) : T().goalDone)}</p></div>${ring(today, saved.goal)}</div>
+    ${levelCard()}${statStrip()}${next}${race}${subjects}`;
+}
+
+function viewSubjects() {
+  const cards = SUBJECTS.map(s => {
+    if (!s.ready) return `<div class="card subject"><span class="ic">${iconOf(s)}</span><h2>${tx(s.name)}</h2><span class="pill">${esc(T().soon)}</span><p>${tx(s.blurb)}</p></div>`;
+    const m = subjectMastery(s), ts = topicsOf(s), done = ts.filter(t => (saved.best[t.id] || 0) >= 80).length;
+    return `<button type="button" class="card subject" data-act="subject" data-arg="${s.id}"><span class="ic">${iconOf(s)}</span><h2>${tx(s.name)}</h2><span class="pct">${m}%</span>${bar(m)}<p>${esc(T().topicsDone(done, ts.length))}</p></button>`;
   }).join("");
-  return `${playerCard()}<div class="head"><div class="eyebrow">${esc(T().homeEyebrow)}</div><h1>${esc(T().homeTitle)}</h1><p class="lede">${esc(T().homeLede)}</p></div><div class="list">${rows}</div>`;
+  return `<div class="head"><div class="eyebrow">${esc(T().homeEyebrow)}</div><h1>${esc(T().home)}</h1><p class="lede">${esc(T().homeLede)}</p></div>${cards}`;
 }
 
 function viewSubject(sub) {
-  const m = subjectMastery(sub);
-  const ts = topicsOf(sub);
+  const ts = topicsOf(sub), m = subjectMastery(sub);
   const done = ts.filter(t => (saved.best[t.id] || 0) >= 80).length;
-  const rows = ts.map((t, i) => {
+  const rows = ts.map(t => {
     const b = saved.best[t.id];
-    const pill = b === undefined ? `<span class="pill">${esc(T().notStarted)}</span>` : b >= 80 ? `<span class="pill good">${esc(T().mastered)}</span>` : "";
-    const side = b === undefined ? pill : `${b}%<small>${esc(T().best)}</small>`;
-    return `<button type="button" class="row" data-act="topic" data-arg="${t.id}"><span class="name"><span class="num">${i + 1}</span>${tx(t.title)}</span><span class="sub">${tx(t.blurb)} ${b !== undefined && b >= 80 ? pill : ""}</span><span class="meter${(b || 0) >= 80 ? " done" : ""}"><i style="width:${b || 0}%"></i></span><span class="side">${side}</span></button>`;
+    return `<li><button type="button" data-act="topic" data-arg="${t.id}"><span class="st ${topicState(b)}"></span><span class="tt">${tx(t.title)}<small>${tx(t.blurb)}</small></span><span class="score">${b === undefined ? "" : b + "%"}</span></button></li>`;
   }).join("");
-  const mb = saved.best["mixed-" + sub.id];
-  const mixed = `<button type="button" class="row" data-act="mixed" data-arg="${sub.id}"><span class="name">${esc(T().mixed)}</span><span class="sub">${esc(T().mixedSub)}</span><span class="side">${mb === undefined ? `<span class="pill gold">8</span>` : `${mb}%<small>${esc(T().best)}</small>`}</span></button>`;
-  const tb = saved.timed[sub.id];
-  const timed = `<button type="button" class="row" data-act="timed" data-arg="${sub.id}"><span class="name">⏱ ${esc(T().timed)}</span><span class="sub">${esc(T().timedSub(TIMED_N, timedMins(sub)))}</span><span class="side">${tb === undefined ? `<span class="pill gold">${timedMins(sub)}′</span>` : `${tb}%<small>${esc(T().best)}</small>`}</span></button>`;
-  return `${crumbs([{ label: T().home, act: "home" }, { label: pick(sub.name) }])}
-    <div class="head"><h1>${tx(sub.name)}</h1><p class="lede">${tx(sub.blurb)}</p></div>
-    <div class="summary"><div class="stat"><b>${m}%</b><span>${esc(T().mastery)}</span></div><div class="stat"><b>${done}/${ts.length}</b><span>${esc(T().topicsDone(done, ts.length))}</span></div></div>
-    <div class="list">${rows}${mixed}${timed}</div>`;
+  const mb = saved.best["mixed-" + sub.id], tb = saved.timed[sub.id];
+  return `${crumbs([{ label: T().home, act: "subjects" }])}
+    <div class="head"><h1>${iconOf(sub)} ${tx(sub.name)}</h1><p class="lede">${tx(sub.blurb)}</p></div>
+    <div class="card"><div class="row2"><b>${esc(T().topicsDone(done, ts.length))}</b><span class="num">${m}%</span></div>${bar(m)}</div>
+    <div class="legend-st"><span><span class="st"></span>${esc(T().notStarted)}</span><span><span class="st learning"></span>${esc(T().learning)}</span><span><span class="st mastered"></span>${esc(T().mastered)}</span></div>
+    <ul class="topics">${rows}</ul>
+    <div class="cards2">
+      <button type="button" class="card" data-act="mixed" data-arg="${sub.id}"><span class="tag">🎲 ${esc(T().mixed)}</span><p>${esc(T().mixedSub)}</p>${mb !== undefined ? `<span class="more">${esc(T().best)}: ${mb}%</span>` : ""}</button>
+      <button type="button" class="card timed" data-act="timed" data-arg="${sub.id}"><span class="tag">⏱ ${esc(T().timed)}</span><p>${esc(T().timedSub(TIMED_N, timedMins(sub)))}</p>${tb !== undefined ? `<span class="more">${esc(T().best)}: ${tb}%</span>` : ""}</button>
+    </div>`;
 }
 
 function viewTrophies() {
-  const lv = levelInfo(saved.xp);
   const badges = BADGES.map(b => {
     const at = saved.badges[b.id];
-    return `<li class="badge${at ? " got" : ""}"><span class="ic" aria-hidden="true">${b.icon}</span><span><b>${tx(b.name)}</b><small>${tx(b.desc)}</small><small class="when">${esc(at ? T().earnedOn(new Date(at).toLocaleDateString(locale())) : T().locked)}</small></span></li>`;
+    return `<li class="badge${at ? " got" : ""}"><span class="ic" aria-hidden="true">${b.icon}</span><b>${tx(b.name)}</b><small>${tx(b.desc)}</small><small class="when">${esc(at ? T().earnedOn(new Date(at).toLocaleDateString(locale())) : T().locked)}</small></li>`;
   }).join("");
   const goals = GOALS.map(g => `<button type="button" data-act="goal" data-arg="${g}" aria-pressed="${saved.goal === g}">${esc(T().goalOpt(g))}</button>`).join("");
-  return `${crumbs([{ label: T().home, act: "home" }, { label: T().trophies }])}
-    <div class="head"><div class="eyebrow">${esc(T().trophies)}</div><h1>${esc(T().level(lv.level))}: ${esc(lv.title)}</h1><p class="lede">${esc(T().trophiesLede)}</p></div>
-    <div class="lvlcard"><span class="xp">${esc(T().xpOf(saved.xp - lv.from, lv.to - lv.from))}</span><span class="meter gold"><i style="width:${lv.pct}%"></i></span></div>
-    <div class="summary"><div class="stat"><b>${saved.xp}</b><span>XP</span></div><div class="stat"><b>🔥 ${streakOf(saved.days)}</b><span>${esc(T().streak(streakOf(saved.days)))}</span></div><div class="stat"><b>${Math.min(todayCount(), saved.goal)}/${saved.goal}</b><span>${esc(T().todayGoal(todayCount(), saved.goal))}</span></div></div>
-    <div class="rules"><h3>${esc(T().goal)}</h3><div class="seg goals" role="group" aria-label="${esc(T().goal)}">${goals}</div></div>
-    <div class="lesson"><h3>${esc(T().badges)}</h3><ul class="badges">${badges}</ul></div>
+  return `<div class="head"><div class="eyebrow">${esc(T().trophies)}</div><h1>${esc(T().trophies)}</h1><p class="lede">${esc(T().trophiesLede)}</p></div>
+    ${levelCard()}${statStrip()}
+    <div class="rules"><h3>${esc(T().goal)}</h3><div class="goals" role="group" aria-label="${esc(T().goal)}">${goals}</div></div>
+    <h3>${esc(T().badges)}</h3><ul class="badges">${badges}</ul>
     <div class="rules"><h3>${esc(T().howXp)}</h3><ul class="plain">${T().xpRules(XP).map(r => `<li>${esc(r)}</li>`).join("")}</ul></div>`;
 }
 
@@ -153,25 +181,20 @@ function viewLesson(sub, t) {
   const steps = ex.steps[L()].map(s => `<li>${esc(s)}</li>`).join("");
   const rules = t.rules.length ? `<div class="rules"><h3>${esc(T().rules)}</h3><ul>${t.rules.map(r => `<li>${tx(r)}</li>`).join("")}</ul></div>` : "";
   const leg = t.showLegend ? `<div class="rules"><h3>${esc(T().legend)}</h3>${legend()}</div>` : "";
-  return `${crumbs([{ label: T().home, act: "home" }, { label: pick(sub.name), act: "subject", arg: sub.id }, { label: pick(t.title) }])}
-    <div class="head"><div class="eyebrow">${esc(T().lessonEyebrow)}</div><h1>${tx(t.title)}</h1><p class="lede">${tx(t.blurb)}</p></div>
+  const b = saved.best[t.id];
+  return `${crumbs([{ label: pick(sub.name), act: "subject", arg: sub.id }])}
+    <div class="head"><div class="eyebrow">${iconOf(sub)} ${esc(T().lessonEyebrow)}${b !== undefined ? ` · ${esc(T().best)} ${b}%` : ""}</div><h1>${tx(t.title)}</h1><p class="lede">${tx(t.blurb)}</p></div>
     <div class="lesson">
       <ol class="points">${t.points.map(p => `<li><span>${tx(p)}</span></li>`).join("")}</ol>
       ${leg}${rules}
       <div class="example"><h3>${esc(T().example)}</h3>${exBody}<ol>${steps}</ol></div>
     </div>
-    <div class="go"><button type="button" class="btn primary" data-act="start" data-arg="${t.id}">${esc(T().start(t.questions.length))}</button></div>`;
+    <div class="go sticky-go"><button type="button" class="btn primary" data-act="start" data-arg="${t.id}">${esc(T().start(t.questions.length))}</button></div>`;
 }
 
 function questionBody(q) {
-  let html = "";
-  if (q.kind === "cmp") {
-    if (q.cond) html += `<p class="cond">${tx(q.cond)}</p>`;
-    html += cmpBox(q.a, q.b);
-  } else {
-    html += `<p class="stem">${tx(q.stem)}</p>`;
-  }
-  return html;
+  if (q.kind === "cmp") return `${q.cond ? `<p class="cond">${tx(q.cond)}</p>` : ""}${cmpBox(q.a, q.b)}`;
+  return `<p class="stem">${tx(q.stem)}</p>`;
 }
 const optsOf = q => q.kind === "cmp" ? CMP_OPTS[L()] : isObj(q.opts) ? q.opts[L()] : q.opts.map(o => pick(o));
 const clock = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
@@ -183,15 +206,15 @@ function viewQuiz() {
   // Timed mode never shows right or wrong until the end.
   const answered = !timed && answers[i] !== undefined;
   const chosen = answered ? answers[i] : picked;
-  const score = rightCount(quiz);
-  const dots = items.map((it, k) => `<i class="${k === i ? "now" : timed ? (k < i ? "seen" : "") : answers[k] !== undefined ? (answers[k] === it.q.ans ? "ok" : "no") : ""}"></i>`).join("");
+  const done = timed ? i : answers.filter(a => a !== undefined).length;
   const opts = optsOf(q).map((o, k) => {
     let cls = "bubble";
     if (answered) { if (k === q.ans) cls += " right"; else if (k === chosen) cls += " wrong"; }
     return `<label class="${cls}"><input type="radio" name="opt" id="opt-${k}" value="${k}"${chosen === k ? " checked" : ""}${answered ? " disabled" : ""}><span class="dot" aria-hidden="true">${LETTERS[k]}</span><span>${esc(o)}</span></label>`;
   }).join("");
-  const gain = quiz.gain[i] ? ` <span class="gain">${esc(T().xpGained(quiz.gain[i]))}</span>` : "";
-  const fb = answered ? `<p class="fb">${chosen === q.ans ? `<b class="ok">${esc(T().correct)}</b>${gain}` : `<b class="no">${esc(T().wrong)} ${LETTERS[q.ans]}.</b>`} ${tx(q.why)}</p>` : "";
+  const ok = answered && chosen === q.ans;
+  const gain = quiz.gain[i] ? `<span class="gain">${esc(T().xpGained(quiz.gain[i]))}</span>` : "";
+  const fb = answered ? `<div class="fb ${ok ? "ok" : "no"}" role="status"><b>${ok ? "✓ " + esc(T().correct) : "✗ " + esc(T().wrong) + " " + LETTERS[q.ans] + "."}</b>${gain}<p>${tx(q.why)}</p></div>` : "";
   const last = i === items.length - 1;
   const btn = timed
     ? `<button type="button" class="btn primary" data-act="tnext">${esc(last ? T().finishNow : picked === undefined ? T().skip : T().next)}</button>`
@@ -200,20 +223,20 @@ function viewQuiz() {
       : `<button type="button" class="btn primary" data-act="check"${picked === undefined ? " disabled" : ""}>${esc(T().check)}</button>`;
   const sub = subject(quiz.subjectId);
   const title = timed ? T().timed : quiz.topicId ? pick(topic.title) : T().mixed;
-  const right = timed
-    ? `<span class="clock">${esc(T().timeLeft)}: <b id="timer">${clock(quiz.deadline - Date.now())}</b></span>`
-    : `<span>${esc(T().scoreSoFar(score))}${quiz.combo >= 3 ? ` · 🔥 ${quiz.combo}` : ""}</span>`;
-  return `${crumbs([{ label: pick(sub.name), act: "subject", arg: sub.id }, { label: title }])}
-    <div class="qtop"><span>${esc(T().qOf(i + 1, items.length))}</span>${right}</div>
-    <div class="dots" aria-hidden="true">${dots}</div>
-    <div class="card${answered ? " answered" : ""}">
+  const left = timed ? quiz.deadline - Date.now() : 0;
+  const meta = timed
+    ? `<span class="clock${left < 60000 ? " low" : ""}" title="${esc(T().timeLeft)}">⏱ <b id="timer">${clock(left)}</b></span>`
+    : quiz.combo >= 3 ? `<span class="combo">${esc(T().inRow(quiz.combo))}</span>` : `<span>${esc(T().scoreSoFar(rightCount(quiz)))}</span>`;
+  return `<div class="qtop"><button type="button" class="x" data-act="subject" data-arg="${sub.id}" aria-label="${esc(T().quit)}">✕</button>${bar(pct(done, items.length))}<span class="count">${i + 1}/${items.length}</span></div>
+    <div class="qmeta"><span>${iconOf(sub)} ${esc(title)}</span>${meta}</div>
+    <div class="qcard${answered ? " answered" : ""}">
       ${q.kind === "cmp" ? legend() : sub.task ? `<p class="task">${tx(sub.task)}</p>` : ""}
       ${topic.passage ? `<div class="passage">${tx(topic.passage)}</div>` : ""}
       ${questionBody(q)}
       <div class="opts" role="radiogroup">${opts}</div>
-      ${fb}
     </div>
-    <div class="go">${btn}</div>`;
+    ${fb}
+    <div class="go sticky-go">${btn}</div>`;
 }
 
 function viewResults() {
@@ -223,6 +246,7 @@ function viewResults() {
   const s = rightCount(quiz);
   const p = pct(s, items.length);
   const msg = p >= 80 ? T().msgHi : p >= 50 ? T().msgMid : T().msgLo;
+  const stars = p >= 80 ? 3 : p >= 50 ? 2 : p > 0 ? 1 : 0;
   const list = items.map((it, k) => {
     const ok = answers[k] === it.q.ans;
     const head = it.q.kind === "cmp"
@@ -236,19 +260,21 @@ function viewResults() {
   const nextT = idx >= 0 && idx < ts.length - 1 ? ts[idx + 1] : null;
   const retry = timed ? `data-act="timed" data-arg="${subjectId}"` : `data-act="${topicId ? "start" : "mixed"}" data-arg="${topicId || subjectId}"`;
   const actions = [
-    `<button type="button" class="btn primary" ${retry}>${esc(T().retry)}</button>`,
-    nextT && p >= 50 ? `<button type="button" class="btn" data-act="topic" data-arg="${nextT.id}">${esc(T().nextTopic)}: ${tx(nextT.title)}</button>` : "",
+    nextT && p >= 50 ? `<button type="button" class="btn primary" data-act="topic" data-arg="${nextT.id}">${esc(T().nextTopic)}: ${tx(nextT.title)}</button>` : "",
+    `<button type="button" class="btn${nextT && p >= 50 ? "" : " primary"}" ${retry}>${esc(T().retry)}</button>`,
     topicId ? `<button type="button" class="btn" data-act="topic" data-arg="${topicId}">${esc(T().reviewLesson)}</button>` : "",
     `<button type="button" class="btn quiet" data-act="subject" data-arg="${subjectId}">${esc(T().back)}</button>`
   ].join("");
   const title = timed ? T().timed : topicId ? pick(findTopic(topicId).t.title) : T().mixed;
   const used = Math.round((quiz.used || 0) / 1000);
-  const timeLine = timed ? `<p class="lede">${quiz.timeUp ? esc(T().timeUp) + " " : ""}${esc(T().timeUsed(Math.floor(used / 60), used % 60))}</p>` : "";
-  return `${crumbs([{ label: pick(sub.name), act: "subject", arg: sub.id }, { label: title }])}
-    <div class="head"><div class="eyebrow">${esc(T().resEyebrow)}</div><div class="big">${p}%</div><h2>${esc(T().resultTitle(s, items.length))}</h2>
-      ${quiz.xp ? `<p class="gain big-gain">${esc(T().xpGained(quiz.xp))}</p>` : ""}${timeLine}<p class="lede">${esc(msg)}</p></div>
+  const timeLine = timed ? `<p class="sub">${quiz.timeUp ? esc(T().timeUp) + " " : ""}${esc(T().timeUsed(Math.floor(used / 60), used % 60))}</p>` : "";
+  return `${crumbs([{ label: pick(sub.name), act: "subject", arg: sub.id }])}
+    <div class="result"><div class="eyebrow">${esc(T().resEyebrow)} · ${esc(title)}</div>
+      <div class="stars" aria-hidden="true">${[0, 1, 2].map(k => `<span${k < stars ? "" : ' class="off"'}>⭐</span>`).join("")}</div>
+      <div class="big">${p}%</div><h2>${esc(T().resultTitle(s, items.length))}</h2>
+      ${quiz.xp ? `<span class="gain big-gain">${esc(T().xpGained(quiz.xp))}</span>` : ""}${timeLine}<p class="sub">${esc(msg)}</p></div>
     <div class="go">${actions}</div>
-    <div class="lesson"><h3>${esc(T().review)}</h3><ul class="review">${list}</ul></div>`;
+    <h3>${esc(T().review)}</h3><ul class="review">${list}</ul>`;
 }
 
 /* ---------- accounts ---------- */
@@ -301,18 +327,22 @@ function viewNewPw() {
     </form>`;
 }
 
+let resetArmed = false;
 function viewSettings() {
+  const about = `<div class="rules"><h3>${esc(T().about)}</h3><p class="small">${esc(Cloud.enabled ? T().footCloud : T().foot)}</p></div>`;
+  const reset = `<div class="go"><button type="button" class="btn danger" data-act="reset">${esc(resetArmed ? T().resetConfirm : T().reset)}</button></div>`;
   const out = `<div class="go"><button type="button" class="btn" data-act="signout">${esc(T().signOut)}</button></div>`;
+  const email = `<p class="lede">${esc(Cloud.user ? Cloud.user.email : "")}</p>`;
+  if (!me) return `<div class="head"><div class="eyebrow">${esc(T().account)}</div><h1>${esc(T().account)}</h1></div>${about}${reset}`;
   if (me.role === "parent") {
-    return `${crumbs([{ label: T().parentTitle, act: "parent" }, { label: T().account }])}
-      <div class="head"><h1>${esc(T().account)}</h1><p class="lede">${esc(Cloud.user ? Cloud.user.email : "")}</p></div>${flashBox()}${out}`;
+    return `${crumbs([{ label: T().parentTitle, act: "parent" }])}
+      <div class="head"><div class="eyebrow">${esc(T().parent)}</div><h1>${esc(T().account)}</h1>${email}</div>${flashBox()}${out}${about}`;
   }
-  return `${crumbs([{ label: T().home, act: "home" }, { label: T().account }])}
-    <div class="head"><h1>${esc(me.nickname)}</h1><p class="lede">${esc(Cloud.user ? Cloud.user.email : "")}</p></div>${flashBox()}
-    <div class="rules"><h3>${esc(T().linkCodeTitle)}</h3><p class="code">${esc(me.link_code || "")}</p><p class="small">${esc(T().linkCodeHint)}</p>${view.parents !== undefined ? `<p class="small">${esc(T().parentsN(view.parents))}</p>` : ""}</div>
+  return `<div class="head"><div class="eyebrow">${esc(T().account)}</div><h1>${esc(me.nickname)}</h1>${email}</div>${flashBox()}
+    <div class="card"><span class="tag">👪 ${esc(T().linkCodeTitle)}</span><p class="code">${esc(me.link_code || "")}</p><p>${esc(T().linkCodeHint)}</p>${view.parents !== undefined ? `<p><b>${esc(T().parentsN(view.parents))}</b></p>` : ""}</div>
     <form class="form" data-form="nick">${field("nickname", T().nickname, "text", `maxlength="30" required value="${esc(me.nickname)}"`, T().nickHint)}
       <div class="go"><button class="btn" type="submit">${esc(T().saveNick)}</button></div></form>
-    <p class="small">${esc(T().sync[Cloud.status])}</p>${out}`;
+    <p class="small">☁️ ${esc(T().sync[Cloud.status])}</p>${out}${about}${reset}`;
 }
 
 // A child's saved progress, filled with defaults so old or empty data still renders.
@@ -322,11 +352,12 @@ const masteryOf = (best, sub) => { const ts = topicsOf(sub); return ts.length ? 
 
 function viewParent() {
   const list = children === null ? `<p class="lede">${esc(T().loading)}</p>` : !children.length ? `<p class="lede">${esc(T().noChildren)}</p>` :
-    `<div class="list">${children.map(c => {
+    children.map(c => {
       const d = childData(c), lv = levelInfo(d.xp), last = lastDay(d), streak = streakOf(d.days);
-      return `<button type="button" class="row" data-act="child" data-arg="${c.id}"><span class="name">${esc(c.nickname)}</span><span class="sub">${esc(T().level(lv.level))}: ${esc(lv.title)} · 🔥 ${esc(T().streak(streak))} · ${esc(last ? T().lastActive(dateOf(last)) : T().never)}</span><span class="side">${d.xp}<small>XP</small></span></button>`;
-    }).join("")}</div>`;
-  return `<div class="head"><div class="eyebrow">${esc(T().parent)}</div><h1>${esc(T().parentTitle)}</h1><p class="lede">${esc(T().parentLede)}</p></div>
+      return `<button type="button" class="card kid" data-act="child" data-arg="${c.id}"><h2>${esc(c.nickname)}</h2><span class="num">${d.xp}<small> XP</small></span><p><span class="lvtag">${esc(T().level(lv.level))}</span> ${esc(lv.title)} · 🔥 ${streak}</p><p>${esc(last ? T().lastActive(dateOf(last)) : T().never)}</p></button>`;
+    }).join("");
+  return `<div class="row2"><div class="eyebrow">👪 ${esc(T().parent)}</div><button type="button" class="chip" data-act="settings">👤 ${esc(T().account)}</button></div>
+    <div class="head"><h1>${esc(T().parentTitle)}</h1><p class="lede">${esc(T().parentLede)}</p></div>
     ${flashBox()}${list}
     <form class="form rules" data-form="link"><h3>${esc(T().linkTitle)}</h3>${field("code", T().linkHint, "text", 'maxlength="12" autocomplete="off" autocapitalize="characters" required')}
       <div class="go"><button class="btn primary" type="submit">${esc(T().linkBtn)}</button></div></form>`;
@@ -347,17 +378,17 @@ function viewChild() {
       return `<li><span>${tx(t.title)}</span><span class="side">${b === undefined ? `<span class="pill">${esc(T().notStarted)}</span>` : b >= 80 ? `<span class="pill good">${b}%</span>` : `<span class="pill bad">${b}%</span>`}</span></li>`;
     }).join("");
     const extra = [d.best["mixed-" + sub.id] !== undefined ? `${T().mixedBestL}: ${d.best["mixed-" + sub.id]}%` : "", d.timed[sub.id] !== undefined ? `${T().timedBestL}: ${d.timed[sub.id]}%` : ""].filter(Boolean).join(" · ");
-    return `<details class="subj"><summary><b>${tx(sub.name)}</b><span class="meter${m >= 80 ? " done" : ""}"><i style="width:${m}%"></i></span><span class="side">${m}%</span></summary><ul class="topics">${rows}</ul>${extra ? `<p class="small">${esc(extra)}</p>` : ""}</details>`;
+    return `<details class="subj"><summary><b>${iconOf(sub)} ${tx(sub.name)}</b>${bar(m)}<span class="side">${m}%</span></summary><ul class="topics-mini">${rows}</ul>${extra ? `<p class="small">${esc(extra)}</p>` : ""}</details>`;
   }).join("");
   const weak = SUBJECTS.flatMap(s => topicsOf(s)).filter(t => d.best[t.id] !== undefined && d.best[t.id] < 80);
   const got = BADGES.filter(b => d.badges[b.id]);
   return `${crumbs([{ label: T().parentTitle, act: "parent" }, { label: c.nickname }])}
-    <div class="head"><h1>${esc(c.nickname)}</h1><p class="lede">${esc(T().level(lv.level))}: ${esc(lv.title)} · ${esc(last ? T().lastActive(dateOf(last)) : T().never)}</p></div>
-    <div class="summary"><div class="stat"><b>${d.xp}</b><span>XP</span></div><div class="stat"><b>🔥 ${streak}</b><span>${esc(T().streak(streak))}</span></div><div class="stat"><b>${d.stats.answered}</b><span>${esc(T().questionsL)}</span></div><div class="stat"><b>${pct(d.stats.right, d.stats.answered)}%</b><span>${esc(T().rightL)}</span></div></div>
-    <div class="lesson"><h3>${esc(T().last14)}</h3><div class="bars" aria-hidden="true">${bars}</div></div>
-    <div class="lesson"><h3>${esc(T().bySubject)}</h3>${subs}</div>
+    <div class="head"><div class="eyebrow"><span class="lvtag">${esc(T().level(lv.level))}</span> ${esc(lv.title)}</div><h1>${esc(c.nickname)}</h1><p class="lede">${esc(last ? T().lastActive(dateOf(last)) : T().never)}</p></div>
+    <div class="stats"><div class="stat fire"><b>🔥 ${streak}</b><span>${esc(T().statStreak)}</span></div><div class="stat"><b>${d.stats.answered}</b><span>${esc(T().questionsL)}</span></div><div class="stat"><b>${pct(d.stats.right, d.stats.answered)}%</b><span>${esc(T().rightL)}</span></div></div>
+    <div class="card"><h3>${esc(T().last14)}</h3><div class="bars" aria-hidden="true">${bars}</div></div>
+    <h3>${esc(T().bySubject)}</h3><div>${subs}</div>
     ${weak.length ? `<div class="rules"><h3>${esc(T().needsWork)}</h3><ul class="plain">${weak.map(t => `<li>${tx(t.title)}: ${d.best[t.id]}%</li>`).join("")}</ul></div>` : ""}
-    <div class="lesson"><h3>${esc(T().badgesEarned)}</h3>${got.length ? `<p class="gotbadges">${got.map(b => `<span>${b.icon} ${tx(b.name)}</span>`).join("")}</p>` : `<p class="small">${esc(T().noneYet)}</p>`}</div>
+    <h3>${esc(T().badgesEarned)} · ${got.length}/${BADGES.length} · ${d.xp} XP</h3>${got.length ? `<p class="gotbadges">${got.map(b => `<span>${b.icon} ${tx(b.name)}</span>`).join("")}</p>` : `<p class="small">${esc(T().noneYet)}</p>`}
     ${flashBox()}<div class="go"><button type="button" class="btn" data-act="copy" data-arg="${c.id}">${esc(T().copySummary)}</button><button type="button" class="btn quiet" data-act="unlink" data-arg="${c.id}">${esc(view.armed ? T().unlinkConfirm : T().unlink)}</button></div>`;
 }
 
@@ -438,7 +469,6 @@ document.getElementById("app").addEventListener("submit", async e => {
       if (!nickname) throw Object.assign(new Error(), { code: "nickname" });
       await Cloud.setNickname(nickname);
       me.nickname = nickname;
-      document.getElementById("acct").textContent = nickname;
       flash = { kind: "ok", msg: () => T().savedOk }; showFlash(form); return;
     }
     if (kind === "link") {
@@ -464,12 +494,19 @@ function render() {
   if (me && me.role === "parent" && !PARENT_VIEWS.includes(view.name)) view = { name: "parent" };
   document.documentElement.lang = L();
   document.getElementById("brand").innerHTML = T().brand;
-  document.getElementById("foot1").textContent = Cloud.enabled ? T().footCloud : T().foot;
-  document.getElementById("reset").textContent = T().reset;
-  document.getElementById("reset").hidden = Cloud.enabled && !(me && me.role === "student");
-  const acct = document.getElementById("acct");
-  if (acct) { acct.hidden = !me; acct.textContent = me ? (me.role === "student" ? me.nickname : T().account) : ""; }
-  document.querySelectorAll(".bar .seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === L())));
+  // Students (and everyone when accounts are off) get the tab bar and level chip; parents and logged-out visitors don't.
+  const player = !Cloud.enabled || (me && me.role === "student");
+  const tabbar = document.getElementById("tabbar"), lvchip = document.getElementById("lvchip");
+  if (tabbar) tabbar.hidden = !player;
+  if (lvchip) { lvchip.hidden = !player; lvchip.textContent = `⭐ ${T().level(levelInfo(saved.xp).level)}`; }
+  const tab = { home: "home", subjects: "subjects", subject: "subjects", topic: "subjects", results: "subjects", trophies: "trophies", settings: "settings" }[view.name];
+  const labels = { home: T().tabToday, subjects: T().home, trophies: T().trophies, settings: T().account };
+  document.querySelectorAll("#tabbar [data-tab]").forEach(b => {
+    b.querySelector("span").textContent = labels[b.dataset.tab];
+    if (b.dataset.tab === tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  });
+  document.body.classList.toggle("quizzing", view.name === "quiz");
+  document.querySelectorAll(".topbar .seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === L())));
   if (timer && !(view.name === "quiz" && quiz && quiz.mode === "timed")) { clearInterval(timer); timer = null; }
   const app = document.getElementById("app");
   if (view.name === "loading") app.innerHTML = `<p class="lede">${esc(T().loading)}</p>`;
@@ -481,6 +518,7 @@ function render() {
   else if (view.name === "parent") app.innerHTML = viewParent();
   else if (view.name === "child") app.innerHTML = viewChild();
   else if (view.name === "home") app.innerHTML = (flash ? flashBox() : "") + viewHome();
+  else if (view.name === "subjects") app.innerHTML = viewSubjects();
   else if (view.name === "subject") app.innerHTML = viewSubject(subject(view.id));
   else if (view.name === "topic") { const sub = subject(view.subjectId); app.innerHTML = viewLesson(sub, sub.topics.find(t => t.id === view.id)); }
   else if (view.name === "quiz") app.innerHTML = viewQuiz();
@@ -505,7 +543,7 @@ function tick() {
   const left = quiz.deadline - Date.now();
   if (left <= 0) { finishTimed(true); return; }
   const el = document.getElementById("timer");
-  if (el) el.textContent = clock(left);
+  if (el) { el.textContent = clock(left); el.parentElement.classList.toggle("low", left < 60000); }
 }
 function finishTimed(timeUp) {
   clearInterval(timer); timer = null;
@@ -531,7 +569,14 @@ document.getElementById("app").addEventListener("click", e => {
   const el = e.target.closest("[data-act]");
   if (!el || el.disabled) return;
   const act = el.dataset.act, arg = el.dataset.arg;
-  if (act === "home") go({ name: "home" });
+  if (act === "home" || act === "subjects") go({ name: act });
+  else if (act === "settings") openSettings();
+  else if (act === "reset") {
+    if (!resetArmed) { resetArmed = true; render(); setTimeout(() => { if (resetArmed) { resetArmed = false; if (view.name === "settings") render(); } }, 3000); return; }
+    resetArmed = false;
+    Object.assign(saved, { best: {}, xp: 0, badges: {}, stats: freshStats(), days: {}, timed: {} });
+    persist(); go({ name: "home" });
+  }
   else if (act === "login" || act === "signup" || act === "forgot" || act === "parent") go({ name: act });
   else if (act === "role") { view.role = arg; render(); }
   else if (act === "signout") Cloud.signOut();
@@ -605,8 +650,11 @@ function openSettings() {
   go({ name: "settings" });
   if (me && me.role === "student") Cloud.parentCount().then(n => { if (view.name === "settings") { view.parents = n; render(); } }, () => {});
 }
-document.getElementById("acct")?.addEventListener("click", openSettings);
-document.querySelectorAll(".bar .seg button").forEach(b => b.addEventListener("click", () => {
+document.querySelectorAll("#tabbar [data-tab]").forEach(b => b.addEventListener("click", () => {
+  if (b.dataset.tab === "settings") openSettings(); else go({ name: b.dataset.tab });
+}));
+document.getElementById("lvchip")?.addEventListener("click", () => go({ name: "trophies" }));
+document.querySelectorAll(".topbar .seg button").forEach(b => b.addEventListener("click", () => {
   saved.lang = b.dataset.lang; persist();
   // A Russian or Kyrgyz grammar topic is hidden in the other language, so step back to its subject.
   const tid = view.name === "topic" ? view.id : (view.name === "quiz" || view.name === "results") ? quiz.topicId : null;
@@ -615,15 +663,6 @@ document.querySelectorAll(".bar .seg button").forEach(b => b.addEventListener("c
   if (quiz && !quiz.topicId && (view.name === "quiz" || view.name === "results") && quiz.items.some(it => !topicsOf(subject(quiz.subjectId)).includes(it.topic))) { go({ name: "subject", id: quiz.subjectId }); return; }
   render();
 }));
-
-let resetArmed = false;
-document.getElementById("reset").addEventListener("click", e => {
-  const btn = e.currentTarget;
-  if (!resetArmed) { resetArmed = true; btn.textContent = T().resetConfirm; setTimeout(() => { resetArmed = false; btn.textContent = T().reset; }, 3000); return; }
-  resetArmed = false;
-  Object.assign(saved, { best: {}, xp: 0, badges: {}, stats: freshStats(), days: {}, timed: {} });
-  persist(); go({ name: "home" });
-});
 
 render();
 if (Cloud.enabled) Cloud.start(onAuth);

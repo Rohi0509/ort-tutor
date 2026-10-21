@@ -1,9 +1,9 @@
 <!doctype html>
 <html><head><title>game test</title><meta charset="utf-8"><link rel="stylesheet" href="../css/styles.css"></head>
 <body>
-<div class="bar"><div class="wrap"><button type="button" class="brand" id="brand"></button><div class="seg"><button data-lang="en">EN</button><button data-lang="ru">Рус</button><button data-lang="ky">Кыр</button></div></div></div>
-<div class="wrap"><main id="app"></main><footer><p id="foot1"></p><p><button type="button" class="btn quiet" id="reset"></button></p></footer></div>
-<!-- Game flow test, no accounts. Run like tests/accounts-flow.html. -->
+<header class="topbar"><div class="wrap"><button type="button" class="brand" id="brand"></button><span class="spacer"></span><button type="button" class="chip lv" id="lvchip" hidden></button><div class="seg"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">Рус</button><button type="button" data-lang="ky">Кыр</button></div></div></header>
+<main id="app" class="wrap"></main>
+<nav class="tabbar" id="tabbar" hidden><button type="button" data-tab="home"><span></span></button><button type="button" data-tab="subjects"><span></span></button><button type="button" data-tab="trophies"><span></span></button><button type="button" data-tab="settings"><span></span></button></nav><!-- Game flow test, no accounts. Run like tests/accounts-flow.html. -->
 <script>localStorage.clear();</script>
 <script src="../js/auth.js"></script>
 <script src="../js/ui.js"></script>
@@ -26,6 +26,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   try {
     ok(/Level 1/.test($("#app").textContent), "home shows player card at level 1");
     // Practice quiz: all right on the first maths topic.
+    click('#tabbar [data-tab="subjects"]');
     click('[data-act="subject"][data-arg="math"]');
     click('[data-act="topic"]');
     click('[data-act="start"]');
@@ -69,7 +70,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(timer === null, "timer stopped");
     // Trophies in all languages.
     for (const l of ["en", "ru", "ky"]) {
-      document.querySelector(`.bar [data-lang="${l}"]`).click();
+      document.querySelector(`.topbar [data-lang="${l}"]`).click();
       click("#brand"); click('[data-act="trophies"]');
       ok(document.querySelectorAll(".badge.got").length >= 5 && !/undefined/.test($("#app").innerHTML), l + " trophies page renders with earned badges");
     }

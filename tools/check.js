@@ -9,7 +9,7 @@ global.localStorage = { getItem: () => null, setItem: () => {} };
 global.window = { scrollTo() {} };
 const els = {};
 const mk = () => ({ innerHTML: "", textContent: "", addEventListener() {}, setAttribute() {} });
-global.document = { documentElement: {}, getElementById: id => els[id] || (els[id] = mk()), querySelectorAll: () => [], querySelector: () => null };
+global.document = { documentElement: {}, body: { classList: { toggle() {} } },getElementById: id => els[id] || (els[id] = mk()), querySelectorAll: () => [], querySelector: () => null };
 
 const order = fs.readFileSync(path.join(root, "index.html"), "utf8").match(/js\/[\w\/-]+\.js/g);
 const source = order.map(f => fs.readFileSync(path.join(root, f), "utf8")).join("\n");
@@ -53,6 +53,8 @@ for (const l of ["en", "ru", "ky"]) {
   Object.assign(saved, { xp: 420, badges: { "first-right": Date.now() }, days: { [dayKey()]: 5 } });
   view = { name: "home" }; render(); chk(els.app.innerHTML, l + " home with game");
   view = { name: "trophies" }; render(); chk(els.app.innerHTML, l + " trophies");
+  view = { name: "subjects" }; render(); chk(els.app.innerHTML, l + " subjects");
+  view = { name: "settings" }; render(); chk(els.app.innerHTML, l + " settings without accounts");
   for (const b of BADGES) if (!b.name[l] || !b.desc[l]) { bad++; console.log("Badge text missing:", l, b.id); }
   if (LEVEL_TITLES[l].length !== LEVEL_TITLES.en.length) { bad++; console.log("Level titles missing:", l); }
   // Account pages, with a flash message, for a student and then a parent with one active and one new child.

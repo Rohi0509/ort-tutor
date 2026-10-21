@@ -4,10 +4,9 @@
 <!-- Accounts flow test with an in-memory stand-in for Supabase (same rules as supabase/schema.sql). Run in headless Chrome:
      chrome --headless=new --allow-file-access-from-files --user-data-dir=<fresh tmp dir> --virtual-time-budget=30000 --dump-dom file:///<repo>/tests/accounts-flow.html
      It prints PASS/FAIL lines into the page. -->
-<div class="bar"><div class="wrap"><button type="button" class="brand" id="brand"></button><span class="spacer"></span><button type="button" class="acct" id="acct" hidden></button>
-  <div class="seg"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">Рус</button><button type="button" data-lang="ky">Кыр</button></div></div></div>
-<div class="wrap"><main id="app"></main><footer><p id="foot1"></p><p><button type="button" class="btn quiet" id="reset"></button></p></footer></div>
-<pre id="out"></pre>
+<header class="topbar"><div class="wrap"><button type="button" class="brand" id="brand"></button><span class="spacer"></span><button type="button" class="chip lv" id="lvchip" hidden></button><div class="seg"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">Рус</button><button type="button" data-lang="ky">Кыр</button></div></div></header>
+<main id="app" class="wrap"></main>
+<nav class="tabbar" id="tabbar" hidden><button type="button" data-tab="home"><span></span></button><button type="button" data-tab="subjects"><span></span></button><button type="button" data-tab="trophies"><span></span></button><button type="button" data-tab="settings"><span></span></button></nav><pre id="out"></pre>
 <script>
 try { localStorage.clear(); } catch (e) {}
 const DB = { users: [], profiles: [], progress: [], links: [], code: "ORT-TEST" };
@@ -104,7 +103,7 @@ const flashText = () => ($(".flash") || {}).textContent || "";
   try {
     await wait();
     ok(!!$('[data-form="login"]'), "signed out shows log in");
-    ok($("#acct").hidden && $("#reset").hidden, "account button and reset hidden when signed out");
+    ok($("#tabbar").hidden && $("#lvchip").hidden, "tab bar and level chip hidden when signed out");
     click('[data-act="signup"]');
     fill("email", "kid@test.com"); fill("password", "secret123"); fill("code", "ORT-TEST"); fill("nickname", " ");
     submit(); await wait();
@@ -115,15 +114,15 @@ const flashText = () => ($(".flash") || {}).textContent || "";
     ok(/group code/i.test(flashText()), "wrong group code: " + flashText());
     fill("code", "ort-test"); submit(); await wait(250);
     ok(me && me.role === "student" && view.name === "home", "student signed in after sign up and sees home");
-    ok(!$("#acct").hidden && $("#acct").textContent === "Aibek", "account button shows nickname");
+    ok(!$("#tabbar").hidden && /Hi Aibek/.test(app()), "tab bar shown and Today greets the nickname");
     // Answer one question right and check it reaches the account.
-    click('[data-act="subject"][data-arg="math"]'); click('[data-act="topic"]'); click('[data-act="start"]');
+    click('#tabbar [data-tab="subjects"]'); click('[data-act="subject"][data-arg="math"]'); click('[data-act="topic"]'); click('[data-act="start"]');
     const r = document.getElementById("opt-" + quiz.items[0].q.ans); r.checked = true; r.dispatchEvent(new Event("change", { bubbles: true }));
     click('[data-act="check"]');
     await wait(1800);
     ok(DB.progress.length === 1 && DB.progress[0].user_id === "u1" && DB.progress[0].data.xp === 10, "XP saved to the account");
     ok(localStorage.getItem("ort-tutor-v1:u1") && !localStorage.getItem("ort-tutor-v1"), "local copy kept per account");
-    click("#acct"); await wait();
+    click('#tabbar [data-tab="settings"]'); await wait();
     ok(app().includes("ABC231") && app().includes("kid@test.com"), "account page shows link code and email");
     ok(/No parent account/.test(app()), "no parents linked yet");
     fill("nickname", "Aibek K"); submit(); await wait();
@@ -147,7 +146,8 @@ const flashText = () => ($(".flash") || {}).textContent || "";
     ok(!$('[data-act="start"]') && !$('[data-act="topic"]'), "parent page has no quiz buttons");
     click('[data-act="unlink"]'); click('[data-act="unlink"]'); await wait(150);
     ok(DB.links.length === 0 && /No children linked/.test(app()), "unlink child");
-    click("#acct"); await wait(); click('[data-act="signout"]'); await wait(150);
+    ok($("#tabbar").hidden, "no tab bar for parents");
+    click('[data-act="settings"]'); await wait(); click('[data-act="signout"]'); await wait(150);
 
     // Student logs back in
     fill("email", "kid@test.com"); fill("password", "wrong"); submit(); await wait(150);
@@ -155,7 +155,7 @@ const flashText = () => ($(".flash") || {}).textContent || "";
     fill("password", "secret123"); submit(); await wait(250);
     ok(me && saved.xp === 10, "student progress back after log in");
     // Russian interface on the login page
-    click('[data-act="trophies"]'); document.querySelector('.bar [data-lang="ru"]').click();
+    click('[data-act="trophies"]'); document.querySelector('.topbar [data-lang="ru"]').click();
     ok(/Награды/.test(app()), "language switch works when logged in");
   } catch (e) { out.push("ERROR " + e.stack); }
   document.getElementById("out").textContent = "RESULTS\n" + out.join("\n");

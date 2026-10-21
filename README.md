@@ -14,6 +14,8 @@ It works in Kyrgyz, Russian and English. The grammar section is different for ea
 
 Each subject also has a mixed practice of 8 random questions and a **timed challenge**: 10 mixed questions against the clock (1 minute each, 2 for reading), with answers shown only at the end, like the real test.
 
+**Looks and works like GCSE Tutor:** a bottom tab bar (Today, Subjects, Trophies, Account), a Today screen with the daily-goal ring, level card, the next topic to work on and a race-the-clock card, subject cards with icons, big tappable answers that turn green or red, and stars on the results screen.
+
 **Game:** students earn XP for right answers (with a bonus for 3 or more in a row), mastering a topic, reaching their daily goal and doing well on timed challenges. XP raises their level, from Beginner to ORT Legend. There are 15 badges to collect, a day streak, and a daily goal they can set (10, 20, 30 or 50 questions). The level card on the home screen opens the Trophies page.
 
 **Accounts (invite-only):** students sign up with an email, password, nickname and the group code, and their progress is saved to their account so it follows them to any device. Parents sign up with the group code too, then type their child's link code (shown on the child's Account page) to follow that child: level, XP, streak, the last 14 days, mastery by subject and topic, weak topics and badges. Parents can only see children they linked, and the database enforces this. Only email, nickname and progress are stored.

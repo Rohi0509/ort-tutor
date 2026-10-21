@@ -201,6 +201,35 @@ Object.assign(UI.ky, {
   }
 });
 
+/* App shell: tab bar, Today screen, quiz and results extras. */
+Object.assign(UI.en, {
+  tabToday: "Today", hi: n => n ? `Hi ${n}` : "Hi there",
+  goalLeft: n => `${n} more question${n === 1 ? "" : "s"} to reach today's goal.`, goalDone: "Today's goal is done. Great work!",
+  keepGoing: "Keep going", learnIt: "Learn it →", allDone: "Every topic mastered! Keep sharp with a timed challenge.",
+  raceTitle: "Race the clock", raceSub: "10 mixed questions, answers at the end. Pick a subject:",
+  subjectsGo: "topics mastered · open subjects →", seeBadges: "see your badges →", xpToNext: (a, b, n) => `${a} / ${b} XP to level ${n}`,
+  inRow: n => `🔥 ${n} in a row`, learning: "In progress", quit: "Quit", statStreak: "Day streak", statXp: "Total XP", statMastered: "Mastered",
+  language: "Language", about: "About"
+});
+Object.assign(UI.ru, {
+  tabToday: "Сегодня", hi: n => n ? `Привет, ${n}` : "Привет",
+  goalLeft: n => `До дневной цели осталось вопросов: ${n}.`, goalDone: "Дневная цель выполнена. Отличная работа!",
+  keepGoing: "Продолжайте", learnIt: "Изучить →", allDone: "Все темы освоены! Держите форму в испытании на время.",
+  raceTitle: "Наперегонки со временем", raceSub: "10 смешанных вопросов, ответы в конце. Выберите предмет:",
+  subjectsGo: "тем освоено · открыть предметы →", seeBadges: "посмотреть значки →", xpToNext: (a, b, n) => `${a} / ${b} XP до уровня ${n}`,
+  inRow: n => `🔥 ${n} подряд`, learning: "В процессе", quit: "Выйти", statStreak: "Дней подряд", statXp: "Всего XP", statMastered: "Освоено",
+  language: "Язык", about: "О приложении"
+});
+Object.assign(UI.ky, {
+  tabToday: "Бүгүн", hi: n => n ? `Салам, ${n}` : "Салам",
+  goalLeft: n => `Бүгүнкү максатка чейин ${n} суроо калды.`, goalDone: "Бүгүнкү максат аткарылды. Азаматсыз!",
+  keepGoing: "Улантыңыз", learnIt: "Үйрөнүү →", allDone: "Бардык темалар өздөштүрүлдү! Убакытка сыноо менен формаңызды сактаңыз.",
+  raceTitle: "Убакыт менен жарыш", raceSub: "10 аралаш суроо, жооптор аягында. Предметти тандаңыз:",
+  subjectsGo: "тема өздөштүрүлдү · предметтерди ачуу →", seeBadges: "белгилерди көрүү →", xpToNext: (a, b, n) => `${n}-деңгээлге чейин ${a} / ${b} XP`,
+  inRow: n => `🔥 катары менен ${n}`, learning: "Аткарылууда", quit: "Чыгуу", statStreak: "Катары менен күн", statXp: "Жалпы XP", statMastered: "Өздөштүрүлдү",
+  language: "Тил", about: "Тиркеме жөнүндө"
+});
+
 const CMP_OPTS = {
   en: ["The quantity in Column А is greater", "The quantity in Column Б is greater", "The quantities are equal", "Not enough information to decide"],
   ru: ["Величина в колонке А больше", "Величина в колонке Б больше", "Величины равны", "Информации недостаточно"],
