@@ -45,7 +45,7 @@ SUBJECTS.push({
     passage: text,                 // optional reading text shown above each question
     questions: [
       { kind: "cmp", cond?: text, a: text, b: text, ans: 0-3, why: text },
-      { kind: "mc", stem: text, opts: [text x5] | { en: [5], ru: [5], ky: [5] }, ans: 0-4, why: text }
+      { kind: "mc", stem: text, opts: [text x N] | { en: [N], ru: [N], ky: [N] }, ans: 0..N-1, why: text }  // N = 5 in math, 4 elsewhere
     ]
   }]
 });
@@ -54,13 +54,13 @@ SUBJECTS.push({
 - A `text` value is either one shared string or `{ en, ru, ky }`. Use a shared string only for language-neutral content such as formulas and numbers.
 - Shared strings write decimals with a dot. The app shows a comma in Russian and Kyrgyz (`fmt()` in `app.js`).
 - Topics marked `only: "ru"` need `{ en, ru }` text, and `only: "ky"` topics need `{ en, ky }`. Their stems and options are plain strings in the target language.
-- `ans` is the 0-based index. Comparison questions always have 4 choices and the others always have 5.
+- `ans` is the 0-based index. As on the real ORT, math multiple-choice questions have 5 options (А–Д); comparison questions and every question in analogies, sentence completion, reading and grammar have 4 (А–Г). `tools/check.js` enforces this.
 
 ## Conventions
 
 - Russian is the main language: it is the default for new visitors, and the language buttons go Рус, Кыр, EN (the user's order). The browser tests set English first because they check English text.
 
-- Follow the ORT format. Math part 1 is quantity comparison (Column А vs Column Б; А greater, Б greater, В equal, Г not enough information). Math part 2 has 5 options А–Д. In the official format analogies, sentence completion, reading and grammar have 4 options А–Г; the current content in those subjects still has 5 and needs cutting to 4 (keep the answer, drop the weakest distractor, and check each `why` doesn't mention the dropped letter).
+- Follow the ORT format. Math part 1 is quantity comparison (Column А vs Column Б; А greater, Б greater, В equal, Г not enough information). Math part 2 has 5 options А–Д. Analogies, sentence completion, reading and grammar have 4 options А–Г (official format, per the ЦООМО brochure). A `why` must not refer to an option by its letter, so options can be reordered or trimmed safely.
 - Every question has a `why` that explains the answer in one or two plain sentences, and names the trap when there is one.
 - Write all three languages for every new item, use Kyrgyz and Kyrgyzstan context (som, Bishkek, Issyk-Kul) where it fits, and run `node tools/check.js`.
 - Progress lives in `localStorage` under `ort-tutor-v1` as `{ lang, best: { topicId: percent }, xp, badges: { id: timestamp }, stats, days: { "YYYY-MM-DD": answers }, goal, timed: { subjectId: percent } }`. Older saves only have `lang` and `best`; the defaults in `app.js` fill in the rest, so keep any new field optional. A topic counts as mastered at 80%. Renaming a topic id resets that topic's saved score.

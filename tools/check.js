@@ -36,7 +36,8 @@ for (const l of ["en", "ru", "ky"]) {
       view = { name: "topic", subjectId: sub.id, id: t.id }; render(); chk(els.app.innerHTML, l + " lesson " + t.id);
       const items = t.questions.map(q => ({ q, topic: t }));
       items.forEach((it, i) => {
-        const o = optsOf(it.q), need = it.q.kind === "cmp" ? 4 : 5;
+        // As on the real ORT: maths part II has 5 options (А–Д); comparisons and every other section have 4 (А–Г).
+        const o = optsOf(it.q), need = it.q.kind === "mc" && sub.id === "math" ? 5 : 4;
         if (!Array.isArray(o) || o.length !== need || it.q.ans < 0 || it.q.ans >= need) { bad++; console.log("Bad options:", l, t.id, "question", i + 1); }
       });
       quiz = { mode: "practice", subjectId: sub.id, topicId: t.id, items, i: 0, answers: [], gain: [10], combo: 3, xp: 0 };
