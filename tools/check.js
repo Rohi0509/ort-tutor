@@ -99,6 +99,25 @@ for (const l of ["en", "ru", "ky"]) {
   chk(summaryText(children[0]) + summaryText(children[1]), l + " parent summary");
   me = null; children = null; flash = null;
 }
+// Paid levels: the example file passes the format check and every question in it renders (with its text);
+// the check also catches a typical mistake.
+const exBundle = JSON.parse(fs.readFileSync(path.join(root, "tools/paid-example.json"), "utf8"));
+if (validatePaid(exBundle, SUBJECTS).length) { bad++; console.log("tools/paid-example.json fails the format check"); }
+const broken = { questions: [{ id: "x", topic: "an-part", level: 2, lang: "ru", kind: "mc", stem: "s", opts: ["a", "b", "c", "d", "e"], ans: 4, why: "w" }] };
+if (!validatePaid(broken, SUBJECTS).some(e => /exactly 4/.test(e))) { bad++; console.log("Format check missed 5 options outside maths"); }
+for (const l of ["ru", "ky"]) {
+  saved.lang = l;
+  usePaid({ questions: exBundle.questions.filter(q => q.lang === l).map(q => ({ id: q.id, topic_id: q.topic, level: q.level, lang: q.lang, data: q })),
+    passages: exBundle.passages.filter(p => p.lang === l).map(p => ({ id: p.id, data: p })) }, l);
+  for (const q of exBundle.questions.filter(x => x.lang === l)) {
+    const f = findTopic(q.topic), item = PAID.byTopic[q.topic].find(x => x.id === q.id);
+    if (!levelQs(f.t, q.level).includes(item)) { bad++; console.log("Paid question not offered at its level:", q.id); }
+    quiz = { mode: "practice", subjectId: f.sub.id, topicId: q.topic, level: q.level, items: [{ q: item, topic: f.t }], i: 0, answers: [item.ans], gain: [], combo: 0, xp: 0 };
+    view = { name: "quiz" }; render(); chk(els.app.innerHTML, l + " paid " + q.id);
+    if (q.passage && !els.app.innerHTML.includes(exBundle.passages[0].title)) { bad++; console.log("Paid passage not shown:", q.id); }
+  }
+}
+usePaid(null, "en");
 console.table(counts);
 console.log(bad ? bad + " problem(s) found" : "All screens OK");
 process.exitCode = bad ? 1 : 0;

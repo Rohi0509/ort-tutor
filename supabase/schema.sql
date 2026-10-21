@@ -12,7 +12,8 @@
 --     When access ends the student is simply back on the free plan, with all progress kept.
 --   * Parents sign up with their CHILD'S LINK CODE and are linked to that child; they can link more children.
 --     A parent sees a child's progress only while that child has full access (enforced below).
---   * Paid practice (levels 2 and 3) will be served from the database to students with access; see CLAUDE.md.
+--   * Paid practice (levels 2 and 3) lives in public.questions / public.passages, readable only with full access.
+--     Admins upload it from the app (Account -> Admin -> Paid questions); the source files stay out of git.
 --
 -- First-time setup, after running this file (in separate queries):
 --   1. Make your first codes (here 5 codes, 1 use each, valid until 1 July 2027):
@@ -60,6 +61,26 @@ create table if not exists public.access_codes (
   created_at timestamptz not null default now()
 );
 create index if not exists access_codes_batch_idx on public.access_codes (batch);
+
+-- Paid practice (levels 2 and 3). Readable only by students with full access and by admins (RLS below), so it is
+-- never shipped in the app's public files. Admins add or replace rows with import_questions().
+-- `data` holds the question in the app's format without id/topic/level/lang: { kind, stem?, a?, b?, cond?, opts?, ans, why, passage? }.
+create table if not exists public.passages (
+  id text primary key,
+  lang text not null check (lang in ('ru', 'ky')),
+  data jsonb not null check (pg_column_size(data) < 60000),   -- { title?, text }
+  updated_at timestamptz not null default now()
+);
+create table if not exists public.questions (
+  id text primary key,
+  topic_id text not null,
+  level int not null check (level in (2, 3)),
+  lang text not null check (lang in ('ru', 'ky')),   -- the Kyrgyz and Russian tests have different questions
+  position int not null default 0,
+  data jsonb not null check (pg_column_size(data) < 20000),
+  updated_at timestamptz not null default now()
+);
+create index if not exists questions_lang_idx on public.questions (lang, position);
 
 create table if not exists public.redemptions (
   code text not null references public.access_codes (code) on delete cascade,
@@ -250,13 +271,55 @@ begin
     (select count(*) from public.progress where updated_at > now() - interval '7 days');
 end $$;
 
+-- Adds or replaces paid questions and passages from a bundle { passages: [{id, lang, title?, text}],
+-- questions: [{id, topic, level, lang, position?, kind, ...}] }. Rows are matched by id; rows not in the bundle stay.
+-- The app checks the bundle's format before sending it (js/paidformat.js); the table checks guard the rest.
+create or replace function public.import_questions(payload jsonb) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare
+  p jsonb;
+  q jsonb;
+  np int := 0;
+  nq int := 0;
+begin
+  perform private.require_admin();
+  for p in select * from jsonb_array_elements(coalesce(payload -> 'passages', '[]'::jsonb)) loop
+    insert into public.passages (id, lang, data, updated_at)
+    values (p ->> 'id', p ->> 'lang', p - 'id' - 'lang', now())
+    on conflict (id) do update set lang = excluded.lang, data = excluded.data, updated_at = now();
+    np := np + 1;
+  end loop;
+  for q in select * from jsonb_array_elements(coalesce(payload -> 'questions', '[]'::jsonb)) loop
+    insert into public.questions (id, topic_id, level, lang, position, data, updated_at)
+    values (q ->> 'id', q ->> 'topic', (q ->> 'level')::int, q ->> 'lang', coalesce((q ->> 'position')::int, 0),
+            q - 'id' - 'topic' - 'level' - 'lang' - 'position', now())
+    on conflict (id) do update set topic_id = excluded.topic_id, level = excluded.level, lang = excluded.lang,
+      position = excluded.position, data = excluded.data, updated_at = now();
+    nq := nq + 1;
+  end loop;
+  return jsonb_build_object('questions', nq, 'passages', np);
+end $$;
+
+-- How many paid questions there are per language and level (admin page).
+create or replace function public.question_counts()
+returns table (lang text, level int, questions bigint)
+language plpgsql security definer set search_path = '' as $$
+begin
+  perform private.require_admin();
+  return query select q.lang, q.level, count(*) from public.questions q group by q.lang, q.level order by q.lang, q.level;
+end $$;
+
 revoke all on function public.link_child(text), public.redeem_code(text), public.create_codes(int, text, date, int),
-  public.code_batches(), public.batch_codes(text), public.admin_stats() from public, anon;
+  public.code_batches(), public.batch_codes(text), public.admin_stats(), public.import_questions(jsonb),
+  public.question_counts() from public, anon;
 grant execute on function public.link_child(text), public.redeem_code(text), public.create_codes(int, text, date, int),
-  public.code_batches(), public.batch_codes(text), public.admin_stats() to authenticated;
+  public.code_batches(), public.batch_codes(text), public.admin_stats(), public.import_questions(jsonb),
+  public.question_counts() to authenticated;
 
 -- ---------- privileges ----------
-revoke all on public.profiles, public.progress, public.parent_links, public.access_codes, public.redemptions from anon, authenticated;
+revoke all on public.profiles, public.progress, public.parent_links, public.access_codes, public.redemptions,
+  public.questions, public.passages from anon, authenticated;
+grant select on public.questions, public.passages to authenticated;   -- and RLS limits it to full access
 grant select on public.profiles to authenticated;
 grant update (nickname) on public.profiles to authenticated;   -- only the nickname can be changed by its owner
 grant select, insert, update on public.progress to authenticated;
@@ -269,6 +332,18 @@ alter table public.progress enable row level security;
 alter table public.parent_links enable row level security;
 alter table public.access_codes enable row level security;
 alter table public.redemptions enable row level security;
+alter table public.questions enable row level security;
+alter table public.passages enable row level security;
+
+-- Paid practice: only students whose access is current, and admins.
+drop policy if exists "questions: full access only" on public.questions;
+drop policy if exists "passages: full access only" on public.passages;
+create policy "questions: full access only" on public.questions
+  for select to authenticated using (exists (
+    select 1 from public.profiles p where p.id = (select auth.uid()) and (p.access_until > now() or p.is_admin)));
+create policy "passages: full access only" on public.passages
+  for select to authenticated using (exists (
+    select 1 from public.profiles p where p.id = (select auth.uid()) and (p.access_until > now() or p.is_admin)));
 
 drop policy if exists "profiles: read own" on public.profiles;
 drop policy if exists "profiles: parents read linked children" on public.profiles;

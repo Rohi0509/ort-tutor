@@ -12,7 +12,7 @@
 try { localStorage.clear(); localStorage.setItem("ort-tutor-lang", "en"); } catch (e) {}  // the checks read English text
 const future = new Date(Date.now() + 200 * 864e5).toISOString(), past = new Date(Date.now() - 864e5).toISOString();
 const code = (c, extra) => ({ code: c, batch: "Test", expires_at: future, max_uses: 1, used: 0, created_at: past, ...extra });
-const DB = { users: [], profiles: [], progress: [], links: [], redemptions: [],
+const DB = { users: [], profiles: [], progress: [], links: [], redemptions: [], questions: [], passages: [],
   codes: [code("GOOD1111"), code("SHARED22"), code("OLDCODE3", { expires_at: past }), code("RENEW444")] };
 let current = null, listener = null, uid = 0;
 const fire = ev => listener && listener(ev, current ? { user: current } : null);
@@ -35,6 +35,10 @@ function visible(table) {
   const paidKid = id => { const c = DB.profiles.find(p => p.id === id); return c && new Date(c.access_until) > new Date(); };
   if (table === "progress") return DB.progress.filter(p => p.user_id === me || (kids.includes(p.user_id) && paidKid(p.user_id)));
   if (table === "parent_links") return DB.links.filter(l => l.parent_id === me || l.student_id === me);
+  // Paid practice: only students with full access, and admins.
+  const mine = DB.profiles.find(p => p.id === me), full = mine && (new Date(mine.access_until) > new Date() || mine.is_admin);
+  if (table === "questions") return full ? DB.questions : [];
+  if (table === "passages") return full ? DB.passages : [];
 }
 function query(table) {
   const f = []; let op = "select", payload = null;
@@ -42,7 +46,7 @@ function query(table) {
     select() { return q; }, eq(c, v) { f.push(r => r[c] === v); return q; }, in(c, vs) { f.push(r => vs.includes(r[c])); return q; },
     update(p) { op = "update"; payload = p; return q; }, delete() { op = "delete"; return q; },
     upsert(row) { op = "upsert"; payload = row; return q; },
-    maybeSingle() { q.single = true; return q; },
+    maybeSingle() { q.single = true; return q; }, order() { return q; },
     then(res, rej) { return Promise.resolve(run()).then(res, rej); }
   };
   function run() {
@@ -122,6 +126,17 @@ const mock = {
       for (const c of DB.codes) { const b = by[c.batch] = by[c.batch] || { batch: c.batch, expires_at: c.expires_at, codes: 0, uses: 0, used: 0, created_at: c.created_at }; b.codes++; b.uses += c.max_uses; b.used += c.used; }
       return ok_(Object.values(by));
     }
+    if (name === "import_questions") {
+      const strip = (o, ...keys) => Object.fromEntries(Object.entries(o).filter(([k]) => !keys.includes(k)));
+      for (const p of a.payload.passages || []) { DB.passages = DB.passages.filter(x => x.id !== p.id); DB.passages.push({ id: p.id, lang: p.lang, data: strip(p, "id", "lang") }); }
+      for (const q of a.payload.questions) { DB.questions = DB.questions.filter(x => x.id !== q.id); DB.questions.push({ id: q.id, topic_id: q.topic, level: q.level, lang: q.lang, position: q.position || 0, data: strip(q, "id", "topic", "level", "lang", "position") }); }
+      return ok_({ questions: a.payload.questions.length, passages: (a.payload.passages || []).length });
+    }
+    if (name === "question_counts") {
+      const by = {};
+      for (const q of DB.questions) { const k = q.lang + q.level; by[k] = by[k] || { lang: q.lang, level: q.level, questions: 0 }; by[k].questions++; }
+      return ok_(Object.values(by));
+    }
     if (name === "batch_codes") return ok_(DB.codes.filter(c => c.batch === a.batch_name).map(c => ({ code: c.code, expires_at: c.expires_at, max_uses: c.max_uses, used: c.used })));
     if (name === "admin_stats") return ok_([{ students: DB.profiles.filter(p => p.role === "student").length, active_access: DB.profiles.filter(p => p.role === "student" && new Date(p.access_until) > new Date()).length, parents: DB.profiles.filter(p => p.role === "parent").length, practised_7d: DB.progress.length }]);
     return err("unknown rpc " + name);
@@ -134,6 +149,7 @@ window.APP_CONFIG = { SUPABASE_URL: "https://test.supabase.co", SUPABASE_ANON_KE
 <script src="../js/ui.js"></script>
 <script src="../js/game.js"></script>
 <script src="../js/guide.js"></script>
+<script src="../js/paidformat.js"></script>
 <script src="../js/subjects.js"></script>
 <script src="../js/data/math.js"></script>
 <script src="../js/data/analogies.js"></script>
@@ -273,6 +289,30 @@ async function logOut() { click('#tabbar [data-tab="settings"]:not([hidden])'); 
     fill("batch", "School 5"); fill("count", "3"); fill("uses", "1"); fill("until", future.slice(0, 10)); submit(); await wait(250);
     ok(view.name === "batch" && DB.codes.filter(c => c.batch === "School 5").length === 3 && document.querySelectorAll(".topics li").length === 3, "admin makes a batch of 3 codes and sees them");
     ok(/3 codes made/.test(flashText()), "admin told how many codes were made");
+
+    // Paid questions: the admin uploads a file, full-access students get level 2, free students get nothing
+    go({ name: "admin" }); await wait(150);
+    const bundle = { passages: [], questions: [
+      { id: "t-ru-cmp", topic: "compare", level: 2, lang: "ru", kind: "cmp", cond: "0 < t < 1", a: "t³", b: "t²", ans: 1, why: "t³ < t²." },
+      { id: "t-ky-gr", topic: "gr-ky-cases", level: 2, lang: "ky", kind: "mc", stem: "— Кимден алдың? — ___ алдым.", opts: ["Агамдан", "Агама", "Агамды", "Агамда"], ans: 0, why: "Чыгыш жөндөмө." }] };
+    stagePaid("bad.json", JSON.stringify({ questions: [{ ...bundle.questions[1], opts: ["a", "b", "c", "d", "e"] }] }));
+    ok(/problem/.test(app()) && !$('[data-act="importpaid"]'), "a file with mistakes is refused before upload");
+    stagePaid("levels.json", JSON.stringify(bundle));
+    click('[data-act="importpaid"]'); await wait(300);
+    ok(DB.questions.length === 2 && /Uploaded 2 questions/.test(flashText()), "admin uploads paid questions");
+    document.querySelector('.topbar [data-lang="ru"]').click(); await wait(300);
+    go({ name: "topic", subjectId: "math", id: "compare" });
+    ok(!!$('.lvl[data-arg="compare|2"]'), "full-access student gets level 2 in Russian");
+    click('.lvl[data-arg="compare|2"]');
+    ok(quiz.level === 2 && quiz.items.length === 1 && quiz.items[0].q.id === "t-ru-cmp", "level 2 quiz has the Russian question only");
+    document.querySelector('.topbar [data-lang="en"]').click(); await wait(200);
+    ok(view.name === "subject", "switching to English leaves a Russian-only quiz");
+    await logOut(); await logIn("sam@test.com", "secret123");
+    document.querySelector('.topbar [data-lang="ru"]').click(); await wait(300);
+    const asked = await Cloud.loadPaid("ru");  // ask the database directly, as the free student
+    ok(!PAID.byTopic.compare && asked.questions.length === 0 && !$('.lvl[data-arg="compare|2"]'), "free student receives no paid questions, even when asking the database");
+    document.querySelector('.topbar [data-lang="en"]').click();
+    await logOut(); await logIn("kid@test.com", "secret123");
 
     // Russian interface
     click('#tabbar [data-tab="trophies"]'); document.querySelector('.topbar [data-lang="ru"]').click();

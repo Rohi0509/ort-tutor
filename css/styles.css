@@ -221,6 +221,8 @@ button.card:active { transform: translateY(1px); }
 .cmp span { font: 600 1.15rem var(--f-mono); overflow-wrap: anywhere; }
 .cmp span.text { font: 600 1rem var(--f-body); }
 .passage { padding: 14px 16px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); line-height: 1.65; max-height: 40vh; overflow-y: auto; }
+.passage > b { display: block; font-family: var(--f-display); margin-bottom: .4em; }
+.passage p + p { margin-top: .8em; }
 .opts { display: grid; gap: 10px; }
 .bubble { position: relative; display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; gap: 12px; cursor: pointer; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--line); background: var(--surface); box-shadow: 0 3px 0 var(--line); font-weight: 600; }
 .bubble:hover { border-color: var(--accent); }

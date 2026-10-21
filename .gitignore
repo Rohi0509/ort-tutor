@@ -1,3 +1,6 @@
 .DS_Store
 Thumbs.db
 node_modules/
+
+# Paid practice (levels 2-3): uploaded from the admin page, never published in this public repo.
+paid-content/

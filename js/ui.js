@@ -339,6 +339,20 @@ Object.assign(UI.ky, {
   childFreeLong: "Балаңыз акысыз планда. Ата-эне үчүн прогрессти көзөмөлдөө толук мүмкүнчүлүккө кирет. Кирүү коду менен балаңыз дагы төмөнкүлөрдү алат:"
 });
 
+/* Paid questions: admin import, and levels 2-3 in English mode. */
+Object.assign(UI.en, { ruKyOnly: "In Russian and Kyrgyz", paidTitle: "Paid questions (levels 2 and 3)", paidNone: "None uploaded yet.",
+  paidChoose: "Upload a questions file (.json)", paidHint: "The file is checked first. Questions with the same id are replaced; others are added.",
+  paidProblems: n => `${n} problem(s) to fix before uploading:`, paidReady: (q, p) => `${q} questions and ${p} texts look right.`,
+  paidUpload: "Upload", paidDone: (q, p) => `Uploaded ${q} questions and ${p} texts.` });
+Object.assign(UI.ru, { ruKyOnly: "На русском и кыргызском", paidTitle: "Платные вопросы (уровни 2 и 3)", paidNone: "Пока ничего не загружено.",
+  paidChoose: "Загрузить файл с вопросами (.json)", paidHint: "Файл сначала проверяется. Вопросы с тем же id заменяются, остальные добавляются.",
+  paidProblems: n => `Исправьте перед загрузкой (проблем: ${n}):`, paidReady: (q, p) => `Вопросов: ${q}, текстов: ${p}. Всё в порядке.`,
+  paidUpload: "Загрузить", paidDone: (q, p) => `Загружено вопросов: ${q}, текстов: ${p}.` });
+Object.assign(UI.ky, { ruKyOnly: "Орус жана кыргыз тилинде", paidTitle: "Акы төлөнүүчү суроолор (2- жана 3-деңгээл)", paidNone: "Азырынча эч нерсе жүктөлгөн жок.",
+  paidChoose: "Суроолор файлын жүктөө (.json)", paidHint: "Файл адегенде текшерилет. Ошол эле id менен суроолор алмаштырылат, калгандары кошулат.",
+  paidProblems: n => `Жүктөөдөн мурун оңдоңуз (көйгөй: ${n}):`, paidReady: (q, p) => `Суроо: ${q}, текст: ${p}. Баары туура.`,
+  paidUpload: "Жүктөө", paidDone: (q, p) => `Жүктөлдү: ${q} суроо, ${p} текст.` });
+
 const CMP_OPTS = {
   en: ["The quantity in Column А is greater", "The quantity in Column Б is greater", "The quantities are equal", "Not enough information to decide"],
   ru: ["Величина в колонке А больше", "Величина в колонке Б больше", "Величины равны", "Информации недостаточно"],

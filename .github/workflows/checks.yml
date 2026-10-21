@@ -12,5 +12,7 @@ jobs:
           node-version: 20
       - name: Content check (every screen in ru, ky, en)
         run: node tools/check.js
+      - name: Paid-question format (example file)
+        run: node tools/check-paid.js
       - name: Browser tests (accounts, codes, game)
         run: node tools/browser-tests.js

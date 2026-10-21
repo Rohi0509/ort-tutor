@@ -166,7 +166,16 @@ const Cloud = (() => {
     return ends;
   };
 
+  /* ---------- paid practice (levels 2-3) ---------- */
+  // The database returns rows only to students with full access (and admins); everyone else gets empty lists.
+  C.loadPaid = async lang => ({
+    questions: must(await sb.from("questions").select("id, topic_id, level, lang, position, data").eq("lang", lang).order("position")),
+    passages: must(await sb.from("passages").select("id, data").eq("lang", lang))
+  });
+
   /* ---------- admins ---------- */
+  C.importPaid = async bundle => must(await sb.rpc("import_questions", { payload: bundle }));
+  C.questionCounts = async () => must(await sb.rpc("question_counts"));
   C.createCodes = async (count, batch, until, uses) =>
     must(await sb.rpc("create_codes", { how_many: count, batch_name: batch, valid_until: until, uses }));
   C.batches = async () => must(await sb.rpc("code_batches"));

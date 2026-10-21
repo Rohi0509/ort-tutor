@@ -69,7 +69,33 @@ const LEVELS = [1, 2, 3];
 const levelOf = q => q.level || 1;
 const shownQ = q => !q.lang || q.lang === L();
 const levelKey = (topicId, lv) => lv === 1 ? topicId : `${topicId}:L${lv}`;  // level 1 keeps the old progress key
-const levelQs = (t, lv) => t.questions.filter(q => levelOf(q) === lv && shownQ(q));
+const allQs = t => t.questions.concat(PAID.byTopic[t.id] || []);
+const levelQs = (t, lv) => allQs(t).filter(q => levelOf(q) === lv && shownQ(q));
+
+/* ---------- paid practice (levels 2-3) from the database ---------- */
+// Only students with full access receive it (the database decides). Kept per account and language on this
+// device so it works offline. PAID.byTopic: topicId -> questions; PAID.passages: id -> { title, text }.
+let PAID = { lang: null, byTopic: {}, passages: {} };
+const PAID_CACHE = "ort-paid:";
+function usePaid(bundle, lang) {
+  PAID = { lang, byTopic: {}, passages: {} };
+  if (!bundle) return;
+  for (const p of bundle.passages || []) PAID.passages[p.id] = p.data;
+  for (const r of bundle.questions || []) (PAID.byTopic[r.topic_id] = PAID.byTopic[r.topic_id] || []).push({ ...r.data, id: r.id, level: r.level, lang: r.lang });
+}
+async function loadPaid() {
+  const lang = L();
+  if (!Cloud.enabled || !me || !(hasAccess() || me.is_admin) || lang === "en") { usePaid(null, lang); return; }
+  const key = PAID_CACHE + me.id + ":" + lang;
+  if (PAID.lang !== lang) usePaid(readStore(key), lang);  // the copy on this device, straight away
+  try {
+    const bundle = await Cloud.loadPaid(lang);
+    if (L() !== lang) return;  // the language changed while loading
+    usePaid(bundle, lang);
+    try { localStorage.setItem(key, JSON.stringify(bundle)); } catch (e) {}
+  } catch (e) { return; }      // offline: keep the cached copy
+  if (["home", "subject", "topic", "subjects"].includes(view.name)) render();
+}
 // Free students get one timed challenge per subject; after that it is part of the paid plan.
 const timedLocked = sub => !paid() && saved.timed[sub.id] !== undefined;
 const fmtCode = c => c.length === 8 ? c.slice(0, 4) + "-" + c.slice(4) : c;
@@ -255,13 +281,19 @@ function levelButton(t, lv) {
   const n = levelQs(t, lv).length, b = saved.best[levelKey(t.id, lv)];
   const name = `<b>${esc(T().levelN(lv))}</b><small>${esc(T().levelName[lv])}</small>`;
   if (lv > 1 && !paid()) return `<button type="button" class="lvl locked" data-act="upgrade"><span class="ic">🔒</span>${name}<small>${esc(T().fullAccess)}</small></button>`;
-  if (!n) return `<div class="lvl soon"><span class="ic">⏳</span>${name}<small>${esc(T().soon)}</small></div>`;
+  if (!n) return `<div class="lvl soon"><span class="ic">⏳</span>${name}<small>${esc(lv > 1 && L() === "en" ? T().ruKyOnly : T().soon)}</small></div>`;
   return `<button type="button" class="lvl${b >= 80 ? " done" : ""}" data-act="start" data-arg="${t.id}|${lv}"><span class="ic">${b >= 80 ? "⭐" : "▶"}</span>${name}<small>${b === undefined ? esc(T().qCount(n)) : `${esc(T().best)}: ${b}%`}</small></button>`;
 }
 
 function questionBody(q) {
   if (q.kind === "cmp") return `${q.cond ? `<p class="cond">${tx(q.cond)}</p>` : ""}${cmpBox(q.a, q.b)}`;
   return `<p class="stem">${tx(q.stem)}</p>`;
+}
+// The reading text for a question: its own passage (paid levels) or the topic's.
+function passageHtml(q, topic) {
+  const p = q.passage ? PAID.passages[q.passage] : null;
+  if (p) return `<div class="passage">${p.title ? `<b>${esc(p.title)}</b>` : ""}${p.text.split(/\n\s*\n/).map(x => `<p>${esc(x.trim())}</p>`).join("")}</div>`;
+  return topic.passage ? `<div class="passage">${tx(topic.passage)}</div>` : "";
 }
 const optsOf = q => q.kind === "cmp" ? CMP_OPTS[L()] : isObj(q.opts) ? q.opts[L()] : q.opts.map(o => pick(o));
 const clock = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
@@ -298,7 +330,7 @@ function viewQuiz() {
     <div class="qmeta"><span>${iconOf(sub)} ${esc(title)}</span>${meta}</div>
     <div class="qcard${answered ? " answered" : ""}">
       ${q.kind === "cmp" ? legend() : sub.task ? `<p class="task">${tx(sub.task)}</p>` : ""}
-      ${topic.passage ? `<div class="passage">${tx(topic.passage)}</div>` : ""}
+      ${passageHtml(q, topic)}
       ${questionBody(q)}
       <div class="opts" role="radiogroup">${opts}</div>
     </div>
@@ -416,13 +448,32 @@ function viewUpgrade() {
 }
 
 /* ---------- admin: access codes and numbers ---------- */
-let admin = { stats: null, batches: null, codes: null };
+let admin = { stats: null, batches: null, codes: null, counts: null, staged: null };
 async function loadAdmin() {
   try {
-    const [stats, batches] = await Promise.all([Cloud.adminStats(), Cloud.batches()]);
-    admin.stats = stats; admin.batches = batches;
-  } catch (err) { admin.batches = admin.batches || []; flash = { kind: "err", msg: errMsg(err) }; }
+    const [stats, batches, counts] = await Promise.all([Cloud.adminStats(), Cloud.batches(), Cloud.questionCounts()]);
+    admin.stats = stats; admin.batches = batches; admin.counts = counts;
+  } catch (err) { admin.batches = admin.batches || []; admin.counts = admin.counts || []; flash = { kind: "err", msg: errMsg(err) }; }
   if (view.name === "admin") render();
+}
+// A paid-questions file chosen on the admin page: checked here, uploaded only when it has no problems.
+function stagePaid(name, text) {
+  let bundle = null, errors;
+  try { bundle = JSON.parse(text); errors = validatePaid(bundle, SUBJECTS); } catch (e) { errors = ["Not valid JSON: " + e.message]; }
+  admin.staged = { name, bundle, errors };
+  render();
+}
+function paidSection() {
+  const c = admin.counts;
+  const table = !c ? `<p class="small">${esc(T().loading)}</p>` : !c.length ? `<p class="small">${esc(T().paidNone)}</p>` :
+    `<ul class="plain">${c.map(r => `<li>${r.lang === "ky" ? "Кыр" : "Рус"} · ${esc(T().levelN(r.level))}: <b>${r.questions}</b></li>`).join("")}</ul>`;
+  const s = admin.staged;
+  const staged = !s ? "" : s.errors.length
+    ? `<div class="flash err"><b>${esc(s.name)}</b>: ${esc(T().paidProblems(s.errors.length))}<ul class="plain">${s.errors.slice(0, 20).map(e => `<li>${esc(e)}</li>`).join("")}</ul></div>`
+    : `<div class="flash ok"><b>${esc(s.name)}</b>: ${esc(T().paidReady(s.bundle.questions.length, (s.bundle.passages || []).length))}</div>
+       <div class="go"><button type="button" class="btn primary" data-act="importpaid">${esc(T().paidUpload)}</button></div>`;
+  return `<div class="card"><h3>${esc(T().paidTitle)}</h3>${table}
+    <label class="field"><span>${esc(T().paidChoose)}</span><input type="file" name="paidfile" accept=".json,application/json"><small>${esc(T().paidHint)}</small></label>${staged}</div>`;
 }
 async function openBatch(name) {
   admin.codes = null;
@@ -438,7 +489,7 @@ function viewAdmin() {
     admin.batches.map(b => `<button type="button" class="card" data-act="batch" data-arg="${esc(b.batch)}"><h2>${esc(b.batch)}</h2><p>${esc(T().batchLine(b.codes, b.used, b.uses, dateLong(b.expires_at)))}</p>${bar(pct(b.used, b.uses), "acc")}</button>`).join("");
   return `${crumbs([{ label: T().account, act: "settings" }])}
     <div class="head"><div class="eyebrow">🛠 ${esc(T().admin)}</div><h1>${esc(T().admin)}</h1><p class="lede">${esc(T().adminLede)}</p></div>
-    ${stats}${flashBox()}
+    ${stats}${flashBox()}${paidSection()}
     <form class="form card" data-form="codes"><h3>${esc(T().newBatch)}</h3>
       ${field("batch", T().batchName, "text", 'maxlength="60" required')}
       ${field("count", T().howMany, "number", 'min="1" max="500" value="30" required')}
@@ -545,6 +596,7 @@ async function onAuth(event, session) {
   if (event === "PASSWORD_RECOVERY") { recovering = true; go({ name: "newpw" }); }
   if (!session) {
     me = null; children = null; recovering = false; STORE = "ort-tutor-v1";
+    usePaid(null, saved.lang);
     useData(null, saved.lang);
     if (!["signup", "forgot", "login"].includes(view.name)) view = { name: "login" };
     render();
@@ -566,6 +618,7 @@ async function loadAccount(user) {
     // Combine this device's copy with the account's; anything new on this device is sent up.
     useData(mergeProgress(local, cloud), saved.lang);
     me = profile;
+    loadPaid();
     if (local && JSON.stringify(mergeProgress(local, cloud)) !== JSON.stringify(cloud)) Cloud.queueSave(saved);
   } else {
     me = profile;
@@ -615,7 +668,8 @@ document.getElementById("app").addEventListener("submit", async e => {
       const ends = await Cloud.redeem(v.code.trim());
       me.access_until = ends;
       flash = { kind: "ok", msg: () => T().codeAdded(dateLong(ends)) };
-      Cloud.flush();  // progress made while access had ended can be saved now
+      Cloud.flush();
+      loadPaid();  // levels 2 and 3 for this language
       if (view.name === "upgrade") go({ name: "home" }, true); else render();
       return;
     }
@@ -741,6 +795,16 @@ document.getElementById("app").addEventListener("click", e => {
   else if (act === "guide") { go({ name: "guide", open: arg }); if (arg) document.getElementById("guide-" + arg)?.scrollIntoView({ block: "start" }); }
   else if (act === "admin") { admin.stats = null; admin.batches = null; go({ name: "admin" }); loadAdmin(); }
   else if (act === "batch") openBatch(arg);
+  else if (act === "importpaid") {
+    const s = admin.staged;
+    if (!s || s.errors.length) return;
+    el.disabled = true;
+    Cloud.importPaid(s.bundle).then(r => {
+      admin.staged = null;
+      flash = { kind: "ok", msg: () => T().paidDone(r.questions, r.passages) };
+      loadAdmin(); loadPaid(); render();
+    }, err => { flash = { kind: "err", msg: errMsg(err) }; render(); });
+  }
   else if (act === "copycodes" || act === "csv") {
     if (!admin.codes) return;
     const free = admin.codes.filter(c => c.used < c.max_uses);
@@ -789,7 +853,7 @@ document.getElementById("app").addEventListener("click", e => {
     const sub = subject(arg);
     if (act === "timed" && timedLocked(sub)) { go({ name: "upgrade" }); return; }
     // Free students mix level 1; full access mixes every level written for this language.
-    const pool = topicsOf(sub).flatMap(t => t.questions.filter(q => shownQ(q) && (levelOf(q) === 1 || paid())).map(q => ({ q, topic: t })));
+    const pool = topicsOf(sub).flatMap(t => allQs(t).filter(q => shownQ(q) && (levelOf(q) === 1 || paid())).map(q => ({ q, topic: t })));
     startQuiz(arg, null, shuffle(pool).slice(0, act === "timed" ? TIMED_N : 8), act === "timed" ? "timed" : "practice");
   }
   else if (act === "check") {
@@ -829,6 +893,11 @@ document.getElementById("app").addEventListener("click", e => {
   }
 });
 document.getElementById("app").addEventListener("change", e => {
+  if (e.target.name === "paidfile" && e.target.files && e.target.files[0]) {
+    const f = e.target.files[0];
+    f.text().then(text => stagePaid(f.name, text));
+    return;
+  }
   if (e.target.name !== "opt" || !quiz) return;
   quiz.picked = Number(e.target.value);
   const btn = document.querySelector('[data-act="check"]');
@@ -847,6 +916,9 @@ document.querySelectorAll("#tabbar [data-tab]").forEach(b => b.addEventListener(
 document.getElementById("lvchip")?.addEventListener("click", () => go({ name: "trophies" }));
 document.querySelectorAll(".topbar .seg button").forEach(b => b.addEventListener("click", () => {
   saved.lang = b.dataset.lang; persist();
+  loadPaid();  // paid levels are written separately for each test language
+  // A quiz of level 2-3 questions written for the other language can't continue in this one.
+  if (quiz && (view.name === "quiz" || view.name === "results") && quiz.items.some(it => it.q.lang && it.q.lang !== L())) { go({ name: "subject", id: quiz.subjectId }); return; }
   // A Russian or Kyrgyz grammar topic is hidden in the other language, so step back to its subject.
   const tid = view.name === "topic" ? view.id : (view.name === "quiz" || view.name === "results") ? quiz.topicId : null;
   const f = tid && findTopic(tid);
