@@ -158,6 +158,16 @@ button.card:active { transform: translateY(1px); }
 .legend-st .st { display: inline-block; width: 13px; height: 13px; vertical-align: -2px; margin-right: 4px; border-width: 1.5px; }
 .cards2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
 
+/* ---------- guide ---------- */
+.guide { display: grid; gap: 10px; }
+.guide .plain { gap: 8px; }
+.guide summary { cursor: pointer; list-style: none; }
+.guide summary::-webkit-details-marker { display: none; }
+.guide summary h2::after { content: " ▸"; color: var(--accent); }
+.guide[open] summary h2::after { content: " ▾"; }
+.guide[open] summary { margin-bottom: 4px; }
+.guide .link { justify-self: start; }
+
 /* ---------- lesson ---------- */
 .lesson { display: grid; gap: 16px; }
 .points { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: p; }

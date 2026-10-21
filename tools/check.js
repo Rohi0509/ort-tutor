@@ -54,6 +54,9 @@ for (const l of ["en", "ru", "ky"]) {
   view = { name: "home" }; render(); chk(els.app.innerHTML, l + " home with game");
   view = { name: "trophies" }; render(); chk(els.app.innerHTML, l + " trophies");
   view = { name: "subjects" }; render(); chk(els.app.innerHTML, l + " subjects");
+  view = { name: "guide", open: "math" }; render(); chk(els.app.innerHTML, l + " guide");
+  for (const g of GUIDE) for (const x of [g.title, ...g.facts, ...g.tips]) if (!x[l]) { bad++; console.log("Guide text missing:", l, g.id); }
+  for (const s of SUBJECTS) if (SECTION_GUIDE[s.id] && !GUIDE.find(g => g.id === SECTION_GUIDE[s.id])) { bad++; console.log("Guide section missing for", s.id); }
   view = { name: "settings" }; render(); chk(els.app.innerHTML, l + " settings without accounts");
   for (const b of BADGES) if (!b.name[l] || !b.desc[l]) { bad++; console.log("Badge text missing:", l, b.id); }
   if (LEVEL_TITLES[l].length !== LEVEL_TITLES.en.length) { bad++; console.log("Level titles missing:", l); }

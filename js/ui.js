@@ -293,6 +293,14 @@ Object.assign(UI.ky.err, {
 UI.ky.sync.noAccess = "Кирүү мөөнөтү бүттү, ошондуктан жаңы прогресс сакталбай жатат. Төмөндө код кошуңуз.";
 for (const l of ["en", "ru", "ky"]) delete UI[l].err.groupCode;  // the shared group code is gone
 
+/* The "How the ORT works" guide (content in guide.js). */
+Object.assign(UI.en, { guideTitle: "How the ORT works", guideLede: "What each part of the test asks of you, the time you get, the rules on the day and how to fill in the answer sheet.",
+  guideCard: "Sections, timing, rules and the answer sheet: know what to expect.", onOrt: "On the ORT", tipsL: "Tips", allAbout: "All about the test →", paceNote: "at the real ORT pace" });
+Object.assign(UI.ru, { guideTitle: "Как устроен ОРТ", guideLede: "Что требуется в каждой части теста, сколько даётся времени, правила в день теста и как заполнять лист ответов.",
+  guideCard: "Разделы, время, правила и лист ответов: знайте заранее, что вас ждёт.", onOrt: "На ОРТ", tipsL: "Советы", allAbout: "Всё о тесте →", paceNote: "в темпе настоящего ОРТ" });
+Object.assign(UI.ky, { guideTitle: "ЖРТ кандай түзүлгөн", guideLede: "Тесттин ар бир бөлүгүндө эмне талап кылынат, канча убакыт берилет, тест күнүндөгү эрежелер жана жооп баракчасын кантип толтуруу керек.",
+  guideCard: "Бөлүмдөр, убакыт, эрежелер жана жооп баракчасы: эмне күтүп турганын алдын ала билиңиз.", onOrt: "ЖРТда", tipsL: "Кеңештер", allAbout: "Тест жөнүндө баары →", paceNote: "чыныгы ЖРТнын темпинде" });
+
 const CMP_OPTS = {
   en: ["The quantity in Column А is greater", "The quantity in Column Б is greater", "The quantities are equal", "Not enough information to decide"],
   ru: ["Величина в колонке А больше", "Величина в колонке Б больше", "Величины равны", "Информации недостаточно"],

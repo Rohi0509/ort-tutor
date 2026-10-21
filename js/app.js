@@ -89,7 +89,7 @@ Cloud.onSaved = data => {
 
 /* ---------- game facts ---------- */
 const TIMED_N = 10;
-const timedMins = sub => TIMED_N * (sub.id === "reading" ? 2 : 1);  // reading questions come with a passage
+const timedMins = sub => Math.ceil(TIMED_N * (ORT_PACE[sub.id] || 60) / 60);  // the real ORT's time per question
 const GOALS = [10, 20, 30, 50];
 function gameFacts() {
   const subs = SUBJECTS.filter(s => s.ready);
@@ -153,8 +153,23 @@ function viewHome() {
     <div class="pills">${subs.map(s => `<button type="button" class="pick" data-act="timed" data-arg="${s.id}">${iconOf(s)} ${tx(s.name)}${saved.timed[s.id] !== undefined ? ` · ${saved.timed[s.id]}%` : ""}</button>`).join("")}</div></div>`;
   const all = readyTopics(), m = all.filter(x => (saved.best[x.t.id] || 0) >= 80).length;
   const subjects = `<button type="button" class="card" data-act="subjects"><div class="row2"><h2>${esc(T().home)}</h2><span class="num">${m}<small>/${all.length}</small></span></div>${bar(pct(m, all.length))}<p>${esc(T().subjectsGo)}</p></button>`;
+  const guide = `<button type="button" class="card" data-act="guide"><span class="tag">📋 ${esc(T().guideTitle)}</span><p>${esc(T().guideCard)}</p><span class="more">${esc(T().allAbout)}</span></button>`;
   return `<div class="hello"><div class="head"><div class="eyebrow">${esc(date)}</div><h1>${esc(T().hi(me && me.nickname))}</h1><p class="sub">${esc(left > 0 ? T().goalLeft(left) : T().goalDone)}</p></div>${ring(today, saved.goal)}</div>
-    ${levelCard()}${statStrip()}${next}${race}${subjects}`;
+    ${levelCard()}${statStrip()}${next}${race}${subjects}${guide}`;
+}
+
+// One part of the guide. Compact (on a subject page) shows the facts, a link to the full guide, and no tips.
+function guideSection(g, compact) {
+  const list = items => `<ul class="plain">${items.map(x => `<li>${tx(x)}</li>`).join("")}</ul>`;
+  const tips = !compact && g.tips.length ? `<h3>💡 ${esc(T().tipsL)}</h3>${list(g.tips)}` : "";
+  if (compact) return `<div class="card guide"><span class="tag">${g.icon} ${esc(T().onOrt)}</span>${list(g.facts)}<button type="button" class="link" data-act="guide" data-arg="${g.id}">${esc(T().allAbout)}</button></div>`;
+  return `<details class="card guide" id="guide-${g.id}"${view.open === g.id ? " open" : ""}><summary><h2>${g.icon} ${tx(g.title)}</h2></summary>${list(g.facts)}${tips}</details>`;
+}
+function viewGuide() {
+  return `${crumbs([{ label: T().tabToday, act: "home" }])}
+    <div class="head"><div class="eyebrow">📋 ОРТ · ЖРТ</div><h1>${esc(T().guideTitle)}</h1><p class="lede">${esc(T().guideLede)}</p></div>
+    ${GUIDE.map(g => guideSection(g, false)).join("")}
+    <p class="small">${tx(GUIDE_SOURCE)}</p>`;
 }
 
 function viewSubjects() {
@@ -177,6 +192,7 @@ function viewSubject(sub) {
   return `${crumbs([{ label: T().home, act: "subjects" }])}
     <div class="head"><h1>${iconOf(sub)} ${tx(sub.name)}</h1><p class="lede">${tx(sub.blurb)}</p></div>
     <div class="card"><div class="row2"><b>${esc(T().topicsDone(done, ts.length))}</b><span class="num">${m}%</span></div>${bar(m)}</div>
+    ${SECTION_GUIDE[sub.id] ? guideSection(GUIDE.find(g => g.id === SECTION_GUIDE[sub.id]), true) : ""}
     <div class="legend-st"><span><span class="st"></span>${esc(T().notStarted)}</span><span><span class="st learning"></span>${esc(T().learning)}</span><span><span class="st mastered"></span>${esc(T().mastered)}</span></div>
     <ul class="topics">${rows}</ul>
     <div class="cards2">
@@ -604,8 +620,12 @@ function render() {
   const player = !Cloud.enabled || (me && me.role === "student" && hasAccess());
   const tabbar = document.getElementById("tabbar"), lvchip = document.getElementById("lvchip");
   if (tabbar) tabbar.hidden = !player;
-  if (lvchip) { lvchip.hidden = !player; lvchip.textContent = `⭐ ${T().level(levelInfo(saved.xp).level)}`; }
-  const tab = { home: "home", subjects: "subjects", subject: "subjects", topic: "subjects", results: "subjects", trophies: "trophies", settings: "settings" }[view.name];
+  if (lvchip) {
+    const n = levelInfo(saved.xp).level;  // just the number, so the bar fits a phone in every language
+    lvchip.hidden = !player; lvchip.textContent = `⭐ ${n}`;
+    lvchip.title = T().level(n); lvchip.setAttribute("aria-label", T().level(n));
+  }
+  const tab = { home: "home", guide: "home", subjects: "subjects", subject: "subjects", topic: "subjects", results: "subjects", trophies: "trophies", settings: "settings" }[view.name];
   const labels = { home: T().tabToday, subjects: T().home, trophies: T().trophies, settings: T().account };
   document.querySelectorAll("#tabbar [data-tab]").forEach(b => {
     b.querySelector("span").textContent = labels[b.dataset.tab];
@@ -628,6 +648,7 @@ function render() {
   else if (view.name === "child") app.innerHTML = viewChild();
   else if (view.name === "home") app.innerHTML = (flash ? flashBox() : "") + viewHome();
   else if (view.name === "subjects") app.innerHTML = viewSubjects();
+  else if (view.name === "guide") app.innerHTML = viewGuide();
   else if (view.name === "subject") app.innerHTML = viewSubject(subject(view.id));
   else if (view.name === "topic") { const sub = subject(view.subjectId); app.innerHTML = viewLesson(sub, sub.topics.find(t => t.id === view.id)); }
   else if (view.name === "quiz") app.innerHTML = viewQuiz();
@@ -680,6 +701,7 @@ document.getElementById("app").addEventListener("click", e => {
   const act = el.dataset.act, arg = el.dataset.arg;
   if (act === "home" || act === "subjects") go({ name: act });
   else if (act === "settings") openSettings();
+  else if (act === "guide") { go({ name: "guide", open: arg }); if (arg) document.getElementById("guide-" + arg)?.scrollIntoView({ block: "start" }); }
   else if (act === "admin") { admin.stats = null; admin.batches = null; go({ name: "admin" }); loadAdmin(); }
   else if (act === "batch") openBatch(arg);
   else if (act === "copycodes" || act === "csv") {
