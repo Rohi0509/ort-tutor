@@ -230,6 +230,69 @@ Object.assign(UI.ky, {
   language: "Тил", about: "Тиркеме жөнүндө"
 });
 
+/* Access codes, expired access and the admin screen. */
+Object.assign(UI.en, {
+  loginLede: "ORT Tutor is invite-only. Students sign up with an access code; parents sign up with their child's link code.",
+  accessCode: "Access code", accessHint: "From your school, tutor or purchase. Each code works for one student.",
+  childCode: "Your child's link code", childCodeHint: "Your child can find it on their Account page in the app.",
+  accessUntil: d => `Access until ${d}`, addCode: "Add an access code", addCodeHint: "Got a new code? Add it here to extend your access.",
+  addBtn: "Add code", codeAdded: d => `Code added. Access until ${d}.`,
+  expiredTitle: "Your access has ended", expiredLede: "Enter a new access code from your school, tutor or purchase. All your progress is kept.",
+  admin: "Admin", adminLede: "Make access codes and see how the app is used.",
+  statStudents: "Students", statActive: "With access", statParents: "Parents", statWeek: "Practised this week",
+  newBatch: "Make codes", batchName: "Name (school, class or sale)", howMany: "How many codes", usesPer: "Students per code", validUntil: "Valid until",
+  makeBtn: "Make codes", made: n => `${n} codes made.`, batchesTitle: "Code batches", noBatches: "No codes yet.",
+  batchLine: (n, used, uses, d) => `${n} codes · ${used} of ${uses} places used · until ${d}`,
+  copyCodes: "Copy codes", downloadCsv: "Download CSV", codeUsed: "Used", codeFree: "Free", codesTitle: "Codes"
+});
+Object.assign(UI.en.err, {
+  badCode: "That access code isn't valid, has already been used or has expired.", noChildSignup: "No child found with that link code. Check it on your child's Account page.",
+  notAdmin: "Only admins can do this.", count: "Make between 1 and 500 codes at a time.", date: "Choose an end date in the future.",
+  noAccess: "Your access has ended. Add a new access code on your Account page."
+});
+UI.en.sync.noAccess = "Your access has ended, so new progress isn't being saved. Add a code below.";
+Object.assign(UI.ru, {
+  loginLede: "Репетитор ОРТ доступен только по приглашению. Ученики регистрируются с кодом доступа, родители — с кодом своего ребёнка.",
+  accessCode: "Код доступа", accessHint: "От школы, репетитора или после покупки. Каждый код — для одного ученика.",
+  childCode: "Код вашего ребёнка", childCodeHint: "Ребёнок найдёт его на странице «Аккаунт» в приложении.",
+  accessUntil: d => `Доступ до ${d}`, addCode: "Добавить код доступа", addCodeHint: "Есть новый код? Добавьте его, чтобы продлить доступ.",
+  addBtn: "Добавить код", codeAdded: d => `Код добавлен. Доступ до ${d}.`,
+  expiredTitle: "Доступ закончился", expiredLede: "Введите новый код доступа от школы, репетитора или после покупки. Весь ваш прогресс сохранён.",
+  admin: "Админ", adminLede: "Создавайте коды доступа и смотрите, как используется приложение.",
+  statStudents: "Ученики", statActive: "С доступом", statParents: "Родители", statWeek: "Занимались за неделю",
+  newBatch: "Создать коды", batchName: "Название (школа, класс или продажа)", howMany: "Сколько кодов", usesPer: "Учеников на код", validUntil: "Действует до",
+  makeBtn: "Создать коды", made: n => `Создано кодов: ${n}.`, batchesTitle: "Наборы кодов", noBatches: "Кодов пока нет.",
+  batchLine: (n, used, uses, d) => `Кодов: ${n} · использовано мест: ${used} из ${uses} · до ${d}`,
+  copyCodes: "Скопировать коды", downloadCsv: "Скачать CSV", codeUsed: "Использован", codeFree: "Свободен", codesTitle: "Коды"
+});
+Object.assign(UI.ru.err, {
+  badCode: "Код доступа неверный, уже использован или истёк.", noChildSignup: "Ребёнок с таким кодом не найден. Проверьте код на странице «Аккаунт» ребёнка.",
+  notAdmin: "Это могут делать только администраторы.", count: "Создавайте от 1 до 500 кодов за раз.", date: "Выберите дату окончания в будущем.",
+  noAccess: "Доступ закончился. Добавьте новый код доступа на странице «Аккаунт»."
+});
+UI.ru.sync.noAccess = "Доступ закончился, поэтому новый прогресс не сохраняется. Добавьте код ниже.";
+Object.assign(UI.ky, {
+  loginLede: "ЖРТ репетитору чакыруу менен гана иштейт. Окуучулар кирүү коду менен, ата-энелер баласынын коду менен катталышат.",
+  accessCode: "Кирүү коду", accessHint: "Мектептен, репетитордон же сатып алгандан кийин берилет. Ар бир код бир окуучу үчүн.",
+  childCode: "Балаңыздын коду", childCodeHint: "Балаңыз аны тиркемедеги «Аккаунт» барагынан табат.",
+  accessUntil: d => `Кирүү мөөнөтү: ${d} чейин`, addCode: "Кирүү кодун кошуу", addCodeHint: "Жаңы код барбы? Мөөнөттү узартуу үчүн ушул жерге кошуңуз.",
+  addBtn: "Кодду кошуу", codeAdded: d => `Код кошулду. Кирүү мөөнөтү: ${d} чейин.`,
+  expiredTitle: "Кирүү мөөнөтү бүттү", expiredLede: "Мектептен, репетитордон же сатып алгандан кийин алган жаңы кодду жазыңыз. Бардык прогрессиңиз сакталган.",
+  admin: "Админ", adminLede: "Кирүү коддорун түзүп, тиркеме кантип колдонулуп жатканын көрүңүз.",
+  statStudents: "Окуучулар", statActive: "Кирүү укугу бар", statParents: "Ата-энелер", statWeek: "Ушул аптада машыккандар",
+  newBatch: "Коддорду түзүү", batchName: "Аталышы (мектеп, класс же сатуу)", howMany: "Канча код", usesPer: "Бир кодго канча окуучу", validUntil: "Жарактуу мөөнөтү",
+  makeBtn: "Коддорду түзүү", made: n => `${n} код түзүлдү.`, batchesTitle: "Код топтомдору", noBatches: "Азырынча код жок.",
+  batchLine: (n, used, uses, d) => `${n} код · ${uses} орундан ${used} колдонулду · ${d} чейин`,
+  copyCodes: "Коддорду көчүрүү", downloadCsv: "CSV жүктөп алуу", codeUsed: "Колдонулган", codeFree: "Бош", codesTitle: "Коддор"
+});
+Object.assign(UI.ky.err, {
+  badCode: "Кирүү коду туура эмес, мурда колдонулган же мөөнөтү бүткөн.", noChildSignup: "Мындай коду бар бала табылган жок. Кодду балаңыздын «Аккаунт» барагынан текшериңиз.",
+  notAdmin: "Муну администраторлор гана жасай алат.", count: "Бир жолу 1ден 500гө чейин код түзүңүз.", date: "Келечектеги бүтүү күнүн тандаңыз.",
+  noAccess: "Кирүү мөөнөтү бүттү. «Аккаунт» барагында жаңы кирүү кодун кошуңуз."
+});
+UI.ky.sync.noAccess = "Кирүү мөөнөтү бүттү, ошондуктан жаңы прогресс сакталбай жатат. Төмөндө код кошуңуз.";
+for (const l of ["en", "ru", "ky"]) delete UI[l].err.groupCode;  // the shared group code is gone
+
 const CMP_OPTS = {
   en: ["The quantity in Column А is greater", "The quantity in Column Б is greater", "The quantities are equal", "Not enough information to decide"],
   ru: ["Величина в колонке А больше", "Величина в колонке Б больше", "Величины равны", "Информации недостаточно"],

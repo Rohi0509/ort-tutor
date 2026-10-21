@@ -1,0 +1,7 @@
+# Not part of the website: tests, tools, database setup and notes.
+.github
+tests
+tools
+supabase
+CLAUDE.md
+README.md

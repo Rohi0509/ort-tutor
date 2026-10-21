@@ -57,6 +57,35 @@ function go(v, keepFlash) { view = v; if (!keepFlash) flash = null; render(); wi
 const locale = () => ({ en: "en-GB", ru: "ru-RU", ky: "ky-KG" }[L()]);
 const dateOf = key => new Date(key + "T12:00:00").toLocaleDateString(locale());
 const errMsg = err => () => T().err[err && err.code] || T().err.generic;
+const dateLong = iso => new Date(iso).toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric" });
+const hasAccess = () => !!(me && me.access_until && new Date(me.access_until).getTime() > Date.now());
+const fmtCode = c => c.length === 8 ? c.slice(0, 4) + "-" + c.slice(4) : c;
+
+/* ---------- combining progress from two devices ---------- */
+// Nothing earned is ever lost: best scores, XP, badges and day counts take the larger value; settings come from
+// the newer copy. A reset (resetAt) wins over anything saved before it. Same-day answers on two devices count
+// as the larger day, not the sum, so totals can come out a little low but never wrong upwards.
+function mergeProgress(a, b) {
+  if (!a || !b) return a || b;
+  const newer = (a.updated || 0) >= (b.updated || 0) ? a : b, older = newer === a ? b : a;
+  if (newer.resetAt && (older.updated || 0) < newer.resetAt) return newer;
+  const maxMap = (x = {}, y = {}) => { const o = { ...x }; for (const k in y) o[k] = Math.max(o[k] || 0, y[k] || 0); return o; };
+  const badges = { ...(older.badges || {}) };
+  for (const [k, t] of Object.entries(newer.badges || {})) badges[k] = badges[k] ? Math.min(badges[k], t) : t;
+  const sa = newer.stats || {}, so = older.stats || {}, stats = { ...so, ...sa };
+  for (const k of ["answered", "right", "bestCombo", "goalDays", "timedDone", "timedBest"]) stats[k] = Math.max(sa[k] || 0, so[k] || 0);
+  stats.subjects = { ...(so.subjects || {}), ...(sa.subjects || {}) };
+  return { ...newer, best: maxMap(older.best, newer.best), timed: maxMap(older.timed, newer.timed), days: maxMap(older.days, newer.days),
+    xp: Math.max(a.xp || 0, b.xp || 0), badges, stats, updated: Math.max(a.updated || 0, b.updated || 0) };
+}
+Cloud.merge = mergeProgress;
+// After a save, pick up anything the other device added, without disturbing the screen.
+Cloud.onSaved = data => {
+  if (!me || me.role !== "student") return;
+  const lang = saved.lang;
+  useData(mergeProgress(saved, data), lang);
+  try { localStorage.setItem(STORE, JSON.stringify(saved)); } catch (e) {}
+};
 
 /* ---------- game facts ---------- */
 const TIMED_N = 10;
@@ -306,7 +335,9 @@ function viewSignup() {
       ${role === "student" ? field("nickname", T().nickname, "text", 'maxlength="30" autocomplete="nickname" required', T().nickHint) : ""}
       ${field("email", T().email, "email", 'autocomplete="email" required')}
       ${field("password", T().password, "password", 'autocomplete="new-password" minlength="8" required', T().pwHint)}
-      ${field("code", T().groupCode, "text", 'autocomplete="off" autocapitalize="characters" required')}
+      ${role === "student"
+        ? field("code", T().accessCode, "text", 'autocomplete="off" autocapitalize="characters" placeholder="ABCD-2345" required', T().accessHint)
+        : field("code", T().childCode, "text", 'autocomplete="off" autocapitalize="characters" placeholder="ABC234" required', T().childCodeHint)}
       <div class="go"><button class="btn primary" type="submit">${esc(T().signupBtn)}</button></div>
     </form>
     <div class="links"><button type="button" class="link" data-act="login">${esc(T().toLogin)}</button></div>`;
@@ -327,6 +358,58 @@ function viewNewPw() {
     </form>`;
 }
 
+const redeemForm = () => `<form class="form" data-form="redeem">
+    ${field("code", T().addCode, "text", 'autocomplete="off" autocapitalize="characters" placeholder="ABCD-2345" required', T().addCodeHint)}
+    <div class="go"><button class="btn" type="submit">${esc(T().addBtn)}</button></div></form>`;
+
+function viewExpired() {
+  return `<div class="head"><div class="eyebrow">🎟 ${esc(me.nickname)}</div><h1>${esc(T().expiredTitle)}</h1><p class="lede">${esc(T().expiredLede)}</p></div>
+    ${flashBox()}<div class="card">${redeemForm()}</div>
+    <div class="go"><button type="button" class="btn quiet" data-act="signout">${esc(T().signOut)}</button></div>`;
+}
+
+/* ---------- admin: access codes and numbers ---------- */
+let admin = { stats: null, batches: null, codes: null };
+async function loadAdmin() {
+  try {
+    const [stats, batches] = await Promise.all([Cloud.adminStats(), Cloud.batches()]);
+    admin.stats = stats; admin.batches = batches;
+  } catch (err) { admin.batches = admin.batches || []; flash = { kind: "err", msg: errMsg(err) }; }
+  if (view.name === "admin") render();
+}
+async function openBatch(name) {
+  admin.codes = null;
+  go({ name: "batch", id: name }, true);
+  try { admin.codes = await Cloud.batchCodes(name); } catch (err) { admin.codes = []; flash = { kind: "err", msg: errMsg(err) }; }
+  if (view.name === "batch") render();
+}
+function viewAdmin() {
+  const s = admin.stats;
+  const stats = s ? `<div class="stats"><div class="stat"><b>${s.students}</b><span>${esc(T().statStudents)}</span></div><div class="stat"><b>${s.active_access}</b><span>${esc(T().statActive)}</span></div><div class="stat"><b>${s.practised_7d}</b><span>${esc(T().statWeek)}</span></div></div><p class="small">${esc(T().statParents)}: ${s.parents}</p>` : "";
+  const nextJuly = `${new Date().getFullYear() + (new Date().getMonth() >= 6 ? 1 : 0)}-07-01`;
+  const batches = admin.batches === null ? `<p class="lede">${esc(T().loading)}</p>` : !admin.batches.length ? `<p class="small">${esc(T().noBatches)}</p>` :
+    admin.batches.map(b => `<button type="button" class="card" data-act="batch" data-arg="${esc(b.batch)}"><h2>${esc(b.batch)}</h2><p>${esc(T().batchLine(b.codes, b.used, b.uses, dateLong(b.expires_at)))}</p>${bar(pct(b.used, b.uses), "acc")}</button>`).join("");
+  return `${crumbs([{ label: T().account, act: "settings" }])}
+    <div class="head"><div class="eyebrow">🛠 ${esc(T().admin)}</div><h1>${esc(T().admin)}</h1><p class="lede">${esc(T().adminLede)}</p></div>
+    ${stats}${flashBox()}
+    <form class="form card" data-form="codes"><h3>${esc(T().newBatch)}</h3>
+      ${field("batch", T().batchName, "text", 'maxlength="60" required')}
+      ${field("count", T().howMany, "number", 'min="1" max="500" value="30" required')}
+      ${field("uses", T().usesPer, "number", 'min="1" max="1000" value="1" required')}
+      ${field("until", T().validUntil, "date", `value="${nextJuly}" required`)}
+      <div class="go"><button class="btn primary" type="submit">${esc(T().makeBtn)}</button></div></form>
+    <h3>${esc(T().batchesTitle)}</h3>${batches}`;
+}
+function viewBatch() {
+  const codes = admin.codes;
+  const rows = codes === null ? `<p class="lede">${esc(T().loading)}</p>` :
+    `<ul class="topics">${codes.map(c => `<li><div><span class="st ${c.used >= c.max_uses ? "mastered" : ""}"></span><span class="tt"><code>${esc(fmtCode(c.code))}</code></span><span class="score">${c.used}/${c.max_uses} ${esc(c.used >= c.max_uses ? T().codeUsed : T().codeFree)}</span></div></li>`).join("")}</ul>`;
+  return `${crumbs([{ label: T().admin, act: "admin" }])}
+    <div class="head"><div class="eyebrow">${esc(T().codesTitle)}</div><h1>${esc(view.id)}</h1></div>${flashBox()}
+    <div class="go"><button type="button" class="btn primary" data-act="copycodes">${esc(T().copyCodes)}</button><button type="button" class="btn" data-act="csv">${esc(T().downloadCsv)}</button></div>
+    ${rows}`;
+}
+
 let resetArmed = false;
 function viewSettings() {
   const about = `<div class="rules"><h3>${esc(T().about)}</h3><p class="small">${esc(Cloud.enabled ? T().footCloud : T().foot)}</p></div>`;
@@ -334,11 +417,14 @@ function viewSettings() {
   const out = `<div class="go"><button type="button" class="btn" data-act="signout">${esc(T().signOut)}</button></div>`;
   const email = `<p class="lede">${esc(Cloud.user ? Cloud.user.email : "")}</p>`;
   if (!me) return `<div class="head"><div class="eyebrow">${esc(T().account)}</div><h1>${esc(T().account)}</h1></div>${about}${reset}`;
+  const adminBtn = me.is_admin ? `<button type="button" class="card" data-act="admin"><span class="tag">🛠 ${esc(T().admin)}</span><p>${esc(T().adminLede)}</p></button>` : "";
   if (me.role === "parent") {
     return `${crumbs([{ label: T().parentTitle, act: "parent" }])}
-      <div class="head"><div class="eyebrow">${esc(T().parent)}</div><h1>${esc(T().account)}</h1>${email}</div>${flashBox()}${out}${about}`;
+      <div class="head"><div class="eyebrow">${esc(T().parent)}</div><h1>${esc(T().account)}</h1>${email}</div>${flashBox()}${adminBtn}${out}${about}`;
   }
   return `<div class="head"><div class="eyebrow">${esc(T().account)}</div><h1>${esc(me.nickname)}</h1>${email}</div>${flashBox()}
+    <div class="card"><span class="tag">🎟 ${esc(me.access_until ? T().accessUntil(dateLong(me.access_until)) : T().expiredTitle)}</span>${redeemForm()}</div>
+    ${adminBtn}
     <div class="card"><span class="tag">👪 ${esc(T().linkCodeTitle)}</span><p class="code">${esc(me.link_code || "")}</p><p>${esc(T().linkCodeHint)}</p>${view.parents !== undefined ? `<p><b>${esc(T().parentsN(view.parents))}</b></p>` : ""}</div>
     <form class="form" data-form="nick">${field("nickname", T().nickname, "text", `maxlength="30" required value="${esc(me.nickname)}"`, T().nickHint)}
       <div class="go"><button class="btn" type="submit">${esc(T().saveNick)}</button></div></form>
@@ -422,11 +508,10 @@ async function loadAccount(user) {
     const local = readStore(STORE);
     let cloud = null;
     try { cloud = await Cloud.loadProgress(); } catch (e) {}
-    // The newer copy wins; progress made offline on this device is sent up.
-    const newest = [local, cloud].filter(Boolean).sort((a, b) => (b.updated || 0) - (a.updated || 0))[0];
-    useData(newest, saved.lang);
+    // Combine this device's copy with the account's; anything new on this device is sent up.
+    useData(mergeProgress(local, cloud), saved.lang);
     me = profile;
-    if (newest && newest === local && (!cloud || (cloud.updated || 0) < (local.updated || 0))) Cloud.queueSave(saved);
+    if (local && JSON.stringify(mergeProgress(local, cloud)) !== JSON.stringify(cloud)) Cloud.queueSave(saved);
   } else {
     me = profile;
     loadChildren();
@@ -451,7 +536,7 @@ document.getElementById("app").addEventListener("submit", async e => {
       const role = view.role || "student", nickname = (v.nickname || "").trim();
       if (role === "student" && !nickname) throw Object.assign(new Error(), { code: "nickname" });
       if (v.password.length < 8) throw Object.assign(new Error(), { code: "weakPw" });
-      const res = await Cloud.signUp({ email: v.email.trim(), password: v.password, role, nickname, joinCode: v.code.trim() });
+      const res = await Cloud.signUp({ email: v.email.trim(), password: v.password, role, nickname, code: v.code.trim() });
       if (res.needsConfirm) { flash = { kind: "ok", msg: () => T().needConfirm }; go({ name: "login" }, true); }
       return;
     }
@@ -471,6 +556,21 @@ document.getElementById("app").addEventListener("submit", async e => {
       me.nickname = nickname;
       flash = { kind: "ok", msg: () => T().savedOk }; showFlash(form); return;
     }
+    if (kind === "redeem") {
+      const ends = await Cloud.redeem(v.code.trim());
+      me.access_until = ends;
+      flash = { kind: "ok", msg: () => T().codeAdded(dateLong(ends)) };
+      Cloud.flush();  // progress made while access had ended can be saved now
+      if (view.name === "expired") go({ name: "home" }, true); else render();
+      return;
+    }
+    if (kind === "codes") {
+      const count = Number(v.count), uses = Number(v.uses);
+      const made = await Cloud.createCodes(count, v.batch.trim(), v.until, uses);
+      flash = { kind: "ok", msg: () => T().made(made.length) };
+      openBatch(v.batch.trim());
+      return;
+    }
     if (kind === "link") {
       const name = await Cloud.linkChild(v.code);
       flash = { kind: "ok", msg: () => T().linked(name) };
@@ -488,14 +588,20 @@ document.getElementById("app").addEventListener("submit", async e => {
 /* ---------- render ---------- */
 const PUBLIC_VIEWS = ["login", "signup", "forgot", "newpw", "loading"];
 const PARENT_VIEWS = ["parent", "child", "settings", "newpw", "loading"];
+const EXPIRED_VIEWS = ["expired", "settings", "newpw", "loading"];
+const ADMIN_VIEWS = ["admin", "batch"];
 function render() {
-  // Accounts on: nothing but the login pages until someone logs in, and parents only see their own pages.
+  // Accounts on: nothing but the login pages until someone logs in, parents only see their own pages, and a
+  // student whose access has ended only sees the page for adding a code. Admin pages need an admin.
   if (Cloud.enabled && !me && !PUBLIC_VIEWS.includes(view.name)) view = { name: "login" };
-  if (me && me.role === "parent" && !PARENT_VIEWS.includes(view.name)) view = { name: "parent" };
+  if (ADMIN_VIEWS.includes(view.name) && !(me && me.is_admin)) view = { name: "home" };
+  const adminPage = ADMIN_VIEWS.includes(view.name);
+  if (me && me.role === "parent" && !PARENT_VIEWS.includes(view.name) && !adminPage) view = { name: "parent" };
+  if (me && me.role === "student" && !hasAccess() && !EXPIRED_VIEWS.includes(view.name) && !adminPage) view = { name: "expired" };
   document.documentElement.lang = L();
   document.getElementById("brand").innerHTML = T().brand;
   // Students (and everyone when accounts are off) get the tab bar and level chip; parents and logged-out visitors don't.
-  const player = !Cloud.enabled || (me && me.role === "student");
+  const player = !Cloud.enabled || (me && me.role === "student" && hasAccess());
   const tabbar = document.getElementById("tabbar"), lvchip = document.getElementById("lvchip");
   if (tabbar) tabbar.hidden = !player;
   if (lvchip) { lvchip.hidden = !player; lvchip.textContent = `⭐ ${T().level(levelInfo(saved.xp).level)}`; }
@@ -515,6 +621,9 @@ function render() {
   else if (view.name === "forgot") app.innerHTML = viewForgot();
   else if (view.name === "newpw") app.innerHTML = viewNewPw();
   else if (view.name === "settings") app.innerHTML = viewSettings();
+  else if (view.name === "expired") app.innerHTML = viewExpired();
+  else if (view.name === "admin") app.innerHTML = viewAdmin();
+  else if (view.name === "batch") app.innerHTML = viewBatch();
   else if (view.name === "parent") app.innerHTML = viewParent();
   else if (view.name === "child") app.innerHTML = viewChild();
   else if (view.name === "home") app.innerHTML = (flash ? flashBox() : "") + viewHome();
@@ -571,10 +680,26 @@ document.getElementById("app").addEventListener("click", e => {
   const act = el.dataset.act, arg = el.dataset.arg;
   if (act === "home" || act === "subjects") go({ name: act });
   else if (act === "settings") openSettings();
+  else if (act === "admin") { admin.stats = null; admin.batches = null; go({ name: "admin" }); loadAdmin(); }
+  else if (act === "batch") openBatch(arg);
+  else if (act === "copycodes" || act === "csv") {
+    if (!admin.codes) return;
+    const free = admin.codes.filter(c => c.used < c.max_uses);
+    if (act === "copycodes") {
+      const done = () => { flash = { kind: "ok", msg: () => T().copied }; render(); };
+      if (navigator.clipboard) navigator.clipboard.writeText(free.map(c => fmtCode(c.code)).join("\n")).then(done, () => {});
+    } else {
+      const csv = "code,valid_until,uses,used\n" + admin.codes.map(c => `${fmtCode(c.code)},${c.expires_at.slice(0, 10)},${c.max_uses},${c.used}`).join("\n");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+      a.download = `ort-codes-${view.id.replace(/[^\w-]+/g, "_")}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+  }
   else if (act === "reset") {
     if (!resetArmed) { resetArmed = true; render(); setTimeout(() => { if (resetArmed) { resetArmed = false; if (view.name === "settings") render(); } }, 3000); return; }
     resetArmed = false;
-    Object.assign(saved, { best: {}, xp: 0, badges: {}, stats: freshStats(), days: {}, timed: {} });
+    Object.assign(saved, { best: {}, xp: 0, badges: {}, stats: freshStats(), days: {}, timed: {}, resetAt: Date.now() });
     persist(); go({ name: "home" });
   }
   else if (act === "login" || act === "signup" || act === "forgot" || act === "parent") go({ name: act });

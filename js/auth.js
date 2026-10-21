@@ -28,7 +28,11 @@ const Cloud = (() => {
       /Failed to fetch|NetworkError|Load failed/i.test(m) ? "offline" :
       /Invalid login credentials/i.test(m) ? "badLogin" :
       /already registered|already been registered|already exists/i.test(m) ? "exists" :
-      /Database error saving new user|GROUP_CODE/i.test(m) ? "groupCode" :
+      /BAD_CODE/.test(m) ? "badCode" :
+      /NOT_ADMIN/.test(m) ? "notAdmin" :
+      /COUNT:/.test(m) ? "count" :
+      /DATE:/.test(m) ? "date" :
+      /row-level security|violates row-level/i.test(m) ? "noAccess" :
       /Email not confirmed/i.test(m) ? "notConfirmed" :
       /rate limit|too many/i.test(m) ? "rateLimit" :
       /Password should be|weak password/i.test(m) ? "weakPw" :
@@ -49,11 +53,15 @@ const Cloud = (() => {
     setTimeout(() => onChange(event, session), 0);
   });
 
-  C.signUp = async ({ email, password, role, nickname, joinCode }) => {
-    const data = must(await sb.auth.signUp({
+  // Students give an access code, parents their child's link code. A refused code comes back from Supabase as a
+  // generic "Database error saving new user", so the role says which code was wrong.
+  C.signUp = async ({ email, password, role, nickname, code }) => {
+    const res = await sb.auth.signUp({
       email, password,
-      options: { data: { role, nickname: role === "student" ? nickname : null, join_code: joinCode }, emailRedirectTo: here() }
-    }));
+      options: { data: { role, nickname: role === "student" ? nickname : null, code }, emailRedirectTo: here() }
+    });
+    if (res.error && /Database error saving new user/i.test(res.error.message || "")) throw fail(role === "parent" ? "noChildSignup" : "badCode");
+    const data = must(res);
     return { needsConfirm: !data.session };
   };
   C.signIn = async (email, password) => { must(await sb.auth.signInWithPassword({ email, password })); };
@@ -67,7 +75,7 @@ const Cloud = (() => {
   /* ---------- profile ---------- */
   C.loadProfile = async user => {
     try {
-      const p = must(await sb.from("profiles").select("id, role, nickname, link_code").eq("id", user.id).maybeSingle());
+      const p = must(await sb.from("profiles").select("id, role, nickname, link_code, access_until, is_admin").eq("id", user.id).maybeSingle());
       if (!p) throw fail("profile");
       try { localStorage.setItem(PROFILE_CACHE + user.id, JSON.stringify(p)); } catch (e) {}
       return p;
@@ -92,24 +100,40 @@ const Cloud = (() => {
     return row ? row.data : null;
   };
   // Saves are batched: the latest state is sent a moment after the last change, and retried when back online.
+  // Before each save the copy in the cloud is read and combined with this one (C.merge, set by app.js), so a
+  // phone and a laptop used in turn never wipe out each other's progress. C.onSaved gets the combined copy.
   let pending = null, timer = null, inflight = null;
+  C.merge = null; C.onSaved = null;
   C.queueSave = state => {
     pending = state; C.status = "waiting";
     clearTimeout(timer); timer = setTimeout(C.flush, 1500);
   };
+  async function save(data) {
+    if (C.merge) {
+      const { data: row, error } = await sb.from("progress").select("data").eq("user_id", C.user.id).maybeSingle();
+      if (error) return { error };
+      if (row && row.data) data = C.merge(data, row.data);
+    }
+    const { error } = await sb.from("progress").upsert({ user_id: C.user.id, data, updated_at: new Date().toISOString() });
+    return { error, data };
+  }
   C.flush = async () => {
     if (inflight) await inflight;
     if (!pending || !C.user) return;
     const data = JSON.parse(JSON.stringify(pending));
     pending = null; clearTimeout(timer);
-    inflight = sb.from("progress").upsert({ user_id: C.user.id, data, updated_at: new Date().toISOString() });
-    const { error } = await inflight;
+    inflight = save(data);
+    const res = await inflight;
     inflight = null;
-    if (error) {
+    if (res.error) {
       if (!pending) pending = data;
-      C.status = "offline";
-      timer = setTimeout(C.flush, 30000);
-    } else C.status = pending ? "waiting" : "saved";
+      // No access (expired) is not fixed by retrying; everything else is treated as being offline.
+      C.status = friendly(res.error).code === "noAccess" ? "noAccess" : "offline";
+      if (C.status === "offline") timer = setTimeout(C.flush, 30000);
+    } else {
+      C.status = pending ? "waiting" : "saved";
+      if (C.onSaved) C.onSaved(res.data);
+    }
   };
   if (enabled) {
     window.addEventListener("online", () => C.flush());
@@ -131,6 +155,22 @@ const Cloud = (() => {
   };
   // Students: how many parent accounts can see my progress.
   C.parentCount = async () => must(await sb.from("parent_links").select("parent_id").eq("student_id", C.user.id)).length;
+  // Students: add an access code. Returns the new end date (ISO string).
+  C.redeem = async code => {
+    const ends = must(await sb.rpc("redeem_code", { code }));
+    try {
+      const p = JSON.parse(localStorage.getItem(PROFILE_CACHE + C.user.id) || "null");
+      if (p) localStorage.setItem(PROFILE_CACHE + C.user.id, JSON.stringify({ ...p, access_until: ends }));
+    } catch (e) {}
+    return ends;
+  };
+
+  /* ---------- admins ---------- */
+  C.createCodes = async (count, batch, until, uses) =>
+    must(await sb.rpc("create_codes", { how_many: count, batch_name: batch, valid_until: until, uses }));
+  C.batches = async () => must(await sb.rpc("code_batches"));
+  C.batchCodes = async batch => must(await sb.rpc("batch_codes", { batch_name: batch }));
+  C.adminStats = async () => (must(await sb.rpc("admin_stats")) || [])[0] || null;
 
   return C;
 })();
