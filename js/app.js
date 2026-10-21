@@ -3,7 +3,7 @@
 // Without accounts progress lives under ort-tutor-v1; a logged-in student's copy lives under ort-tutor-v1:<userId>.
 let STORE = "ort-tutor-v1";
 const LANG_KEY = "ort-tutor-lang";
-const defaults = () => ({ lang: "en", best: {}, xp: 0, badges: {}, stats: {}, days: {}, goal: 20, timed: {} });
+const defaults = () => ({ lang: "ru", best: {}, xp: 0, badges: {}, stats: {}, days: {}, goal: 20, timed: {} });
 const freshStats = () => ({ answered: 0, right: 0, bestCombo: 0, goalDays: 0, timedDone: 0, timedBest: 0, subjects: {} });
 function readStore(key) { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (e) { return null; } }
 function useData(data, lang) {

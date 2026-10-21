@@ -54,6 +54,8 @@ SUBJECTS.push({
 
 ## Conventions
 
+- Russian is the main language: it is the default for new visitors, and the language buttons go Рус, Кыр, EN (the user's order). The browser tests set English first because they check English text.
+
 - Follow the ORT format. Math part 1 is quantity comparison (Column А vs Column Б; А greater, Б greater, В equal, Г not enough information). The other tasks have 5 options labelled А–Д.
 - Every question has a `why` that explains the answer in one or two plain sentences, and names the trap when there is one.
 - Write all three languages for every new item, use Kyrgyz and Kyrgyzstan context (som, Bishkek, Issyk-Kul) where it fits, and run `node tools/check.js`.

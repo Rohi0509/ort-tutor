@@ -4,11 +4,11 @@
 <!-- Accounts flow test with an in-memory stand-in for Supabase (same rules as supabase/schema.sql). Run in headless Chrome:
      chrome --headless=new --allow-file-access-from-files --user-data-dir=<fresh tmp dir> --virtual-time-budget=30000 --dump-dom file:///<repo>/tests/accounts-flow.html
      It prints PASS/FAIL lines into the page. -->
-<header class="topbar"><div class="wrap"><button type="button" class="brand" id="brand"></button><span class="spacer"></span><button type="button" class="chip lv" id="lvchip" hidden></button><div class="seg"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">Рус</button><button type="button" data-lang="ky">Кыр</button></div></div></header>
+<header class="topbar"><div class="wrap"><button type="button" class="brand" id="brand"></button><span class="spacer"></span><button type="button" class="chip lv" id="lvchip" hidden></button><div class="seg"><button type="button" data-lang="ru">Рус</button><button type="button" data-lang="ky">Кыр</button><button type="button" data-lang="en">EN</button></div></div></header>
 <main id="app" class="wrap"></main>
 <nav class="tabbar" id="tabbar" hidden><button type="button" data-tab="home"><span></span></button><button type="button" data-tab="subjects"><span></span></button><button type="button" data-tab="trophies"><span></span></button><button type="button" data-tab="settings"><span></span></button></nav><pre id="out"></pre>
 <script>
-try { localStorage.clear(); } catch (e) {}
+try { localStorage.clear(); localStorage.setItem("ort-tutor-lang", "en"); } catch (e) {}  // the checks read English text
 const DB = { users: [], profiles: [], progress: [], links: [], code: "ORT-TEST" };
 let current = null, listener = null, uid = 0;
 const fire = ev => listener && listener(ev, current ? { user: current } : null);

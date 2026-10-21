@@ -1,10 +1,10 @@
 <!doctype html>
 <html><head><title>game test</title><meta charset="utf-8"><link rel="stylesheet" href="../css/styles.css"></head>
 <body>
-<header class="topbar"><div class="wrap"><button type="button" class="brand" id="brand"></button><span class="spacer"></span><button type="button" class="chip lv" id="lvchip" hidden></button><div class="seg"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">Рус</button><button type="button" data-lang="ky">Кыр</button></div></div></header>
+<header class="topbar"><div class="wrap"><button type="button" class="brand" id="brand"></button><span class="spacer"></span><button type="button" class="chip lv" id="lvchip" hidden></button><div class="seg"><button type="button" data-lang="ru">Рус</button><button type="button" data-lang="ky">Кыр</button><button type="button" data-lang="en">EN</button></div></div></header>
 <main id="app" class="wrap"></main>
 <nav class="tabbar" id="tabbar" hidden><button type="button" data-tab="home"><span></span></button><button type="button" data-tab="subjects"><span></span></button><button type="button" data-tab="trophies"><span></span></button><button type="button" data-tab="settings"><span></span></button></nav><!-- Game flow test, no accounts. Run like tests/accounts-flow.html. -->
-<script>localStorage.clear();</script>
+<script>localStorage.clear(); localStorage.setItem("ort-tutor-lang", "en");  // the checks read English text</script>
 <script src="../js/auth.js"></script>
 <script src="../js/ui.js"></script>
 <script src="../js/game.js"></script>

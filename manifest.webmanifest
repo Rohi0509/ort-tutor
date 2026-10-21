@@ -2,7 +2,7 @@
   "name": "ORT Tutor",
   "short_name": "ORT Tutor",
   "description": "Lessons and practice quizzes for the ORT Main Test in Kyrgyz, Russian and English.",
-  "lang": "en",
+  "lang": "ru",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
