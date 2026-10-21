@@ -4,19 +4,21 @@
 --
 -- What is stored: email (Supabase Auth, for login only), nickname, role, access end date, ORT progress. Nothing else.
 --
--- Access (how people get in):
---   * Students sign up with a single-use ACCESS CODE. Each code has a number of uses (usually 1) and an end date;
---     the student's access lasts until that date. A shared code stops working once its uses are spent.
---     Students add a new code from their Account page to extend access.
---   * Parents sign up with their CHILD'S LINK CODE (shown on the child's Account page) and are linked to that child.
---     They can link more children later. There is no shared group code.
---   * Progress can only be saved while the student's access is current (enforced below, not just in the app).
+-- Plans and access:
+--   * FREE: anyone can sign up as a student without a code. Free students save progress like everyone else.
+--   * FULL ACCESS: a single-use ACCESS CODE (from a school, a tutor or a purchase) sets profiles.access_until.
+--     Each code has a number of uses (usually 1) and an end date; access lasts until that date. A shared code
+--     stops working once its uses are spent. Students add a code at sign-up or later from their Account page.
+--     When access ends the student is simply back on the free plan, with all progress kept.
+--   * Parents sign up with their CHILD'S LINK CODE and are linked to that child; they can link more children.
+--     A parent sees a child's progress only while that child has full access (enforced below).
+--   * Paid practice (levels 2 and 3) will be served from the database to students with access; see CLAUDE.md.
 --
 -- First-time setup, after running this file (in separate queries):
 --   1. Make your first codes (here 5 codes, 1 use each, valid until 1 July 2027):
 --        select private.make_codes(5, 'Owner', '2027-07-01', 1);
 --      then list them:  select code, expires_at from public.access_codes where batch = 'Owner';
---   2. Sign up in the app as a student with one of those codes.
+--   2. Sign up in the app as a student (with or without one of those codes).
 --   3. Make that account an admin, so you can make and track codes inside the app (Account -> Admin):
 --        update public.profiles set is_admin = true where id = (select id from auth.users where email = 'YOUR@EMAIL');
 
@@ -147,8 +149,11 @@ begin
   if r = 'student' then
     if nick is null then raise exception 'NICKNAME: students need a nickname'; end if;
     insert into public.profiles (id, role, nickname, link_code) values (new.id, 'student', left(nick, 30), private.new_link_code());
-    ends := private.take_code(code, new.id);
-    update public.profiles set access_until = ends where id = new.id;
+    -- No code = free plan. A code that is given must be valid, or the sign-up is refused.
+    if private.norm(code) <> '' then
+      ends := private.take_code(code, new.id);
+      update public.profiles set access_until = ends where id = new.id;
+    end if;
   elsif r = 'parent' then
     select id into child from public.profiles where role = 'student' and link_code = private.norm(code);
     if child is null then raise exception 'NO_CHILD: no child found with that code'; end if;
@@ -276,22 +281,22 @@ create policy "profiles: parents read linked children" on public.profiles
 create policy "profiles: update own" on public.profiles
   for update to authenticated using (id = (select auth.uid())) with check (id = (select auth.uid()));
 
--- Saving progress needs current access; reading your own (or a linked child's) always works.
+-- Every student (free or full) saves their own progress. A parent reads a linked child's progress only while
+-- that child has full access: the parent dashboard is part of the paid plan.
 drop policy if exists "progress: read own or linked child" on public.progress;
 drop policy if exists "progress: students insert own" on public.progress;
 drop policy if exists "progress: students update own" on public.progress;
 create policy "progress: read own or linked child" on public.progress
   for select to authenticated using (
     user_id = (select auth.uid())
-    or exists (select 1 from public.parent_links l where l.parent_id = (select auth.uid()) and l.student_id = progress.user_id));
+    or exists (select 1 from public.parent_links l join public.profiles c on c.id = l.student_id
+               where l.parent_id = (select auth.uid()) and l.student_id = progress.user_id and c.access_until > now()));
 create policy "progress: students insert own" on public.progress
   for insert to authenticated with check (
     user_id = (select auth.uid())
-    and exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'student' and p.access_until > now()));
+    and exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'student'));
 create policy "progress: students update own" on public.progress
-  for update to authenticated using (user_id = (select auth.uid())) with check (
-    user_id = (select auth.uid())
-    and exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'student' and p.access_until > now()));
+  for update to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 
 drop policy if exists "links: parent or child reads" on public.parent_links;
 drop policy if exists "links: parent or child removes" on public.parent_links;

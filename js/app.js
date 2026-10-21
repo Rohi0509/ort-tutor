@@ -59,6 +59,19 @@ const dateOf = key => new Date(key + "T12:00:00").toLocaleDateString(locale());
 const errMsg = err => () => T().err[err && err.code] || T().err.generic;
 const dateLong = iso => new Date(iso).toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric" });
 const hasAccess = () => !!(me && me.access_until && new Date(me.access_until).getTime() > Date.now());
+// Full access: a student with a current code, or anyone when accounts are off (testing on this computer).
+const paid = () => !Cloud.enabled || hasAccess();
+
+/* ---------- levels ---------- */
+// Level 1 is free; levels 2 and 3 are the paid, ORT-standard and ORT-hard practice. A question without `level` is
+// level 1. A question with `lang` ("ru" or "ky") is written for that test language only (not translated).
+const LEVELS = [1, 2, 3];
+const levelOf = q => q.level || 1;
+const shownQ = q => !q.lang || q.lang === L();
+const levelKey = (topicId, lv) => lv === 1 ? topicId : `${topicId}:L${lv}`;  // level 1 keeps the old progress key
+const levelQs = (t, lv) => t.questions.filter(q => levelOf(q) === lv && shownQ(q));
+// Free students get one timed challenge per subject; after that it is part of the paid plan.
+const timedLocked = sub => !paid() && saved.timed[sub.id] !== undefined;
 const fmtCode = c => c.length === 8 ? c.slice(0, 4) + "-" + c.slice(4) : c;
 
 /* ---------- combining progress from two devices ---------- */
@@ -150,12 +163,13 @@ function viewHome() {
     : `<div class="card next"><span class="tag">🏆</span><h2>${esc(T().allDone)}</h2></div>`;
   const subs = SUBJECTS.filter(s => s.ready);
   const race = `<div class="card timed"><span class="tag">⏱ ${esc(T().timed)}</span><h2>${esc(T().raceTitle)}</h2><p>${esc(T().raceSub)}</p>
-    <div class="pills">${subs.map(s => `<button type="button" class="pick" data-act="timed" data-arg="${s.id}">${iconOf(s)} ${tx(s.name)}${saved.timed[s.id] !== undefined ? ` · ${saved.timed[s.id]}%` : ""}</button>`).join("")}</div></div>`;
+    <div class="pills">${subs.map(s => `<button type="button" class="pick" data-act="${timedLocked(s) ? "upgrade" : "timed"}" data-arg="${s.id}">${timedLocked(s) ? "🔒" : iconOf(s)} ${tx(s.name)}${saved.timed[s.id] !== undefined ? ` · ${saved.timed[s.id]}%` : ""}</button>`).join("")}</div></div>`;
+  const upgrade = paid() ? "" : `<button type="button" class="card upsell" data-act="upgrade"><span class="tag">⭐ ${esc(T().fullAccess)}</span><h2>${esc(T().upTitle)}</h2><p>${esc(T().upCard)}</p><span class="more">${esc(T().upGo)}</span></button>`;
   const all = readyTopics(), m = all.filter(x => (saved.best[x.t.id] || 0) >= 80).length;
   const subjects = `<button type="button" class="card" data-act="subjects"><div class="row2"><h2>${esc(T().home)}</h2><span class="num">${m}<small>/${all.length}</small></span></div>${bar(pct(m, all.length))}<p>${esc(T().subjectsGo)}</p></button>`;
   const guide = `<button type="button" class="card" data-act="guide"><span class="tag">📋 ${esc(T().guideTitle)}</span><p>${esc(T().guideCard)}</p><span class="more">${esc(T().allAbout)}</span></button>`;
   return `<div class="hello"><div class="head"><div class="eyebrow">${esc(date)}</div><h1>${esc(T().hi(me && me.nickname))}</h1><p class="sub">${esc(left > 0 ? T().goalLeft(left) : T().goalDone)}</p></div>${ring(today, saved.goal)}</div>
-    ${levelCard()}${statStrip()}${next}${race}${subjects}${guide}`;
+    ${levelCard()}${statStrip()}${next}${upgrade}${race}${subjects}${guide}`;
 }
 
 // One part of the guide. Compact (on a subject page) shows the facts, a link to the full guide, and no tips.
@@ -197,7 +211,7 @@ function viewSubject(sub) {
     <ul class="topics">${rows}</ul>
     <div class="cards2">
       <button type="button" class="card" data-act="mixed" data-arg="${sub.id}"><span class="tag">🎲 ${esc(T().mixed)}</span><p>${esc(T().mixedSub)}</p>${mb !== undefined ? `<span class="more">${esc(T().best)}: ${mb}%</span>` : ""}</button>
-      <button type="button" class="card timed" data-act="timed" data-arg="${sub.id}"><span class="tag">⏱ ${esc(T().timed)}</span><p>${esc(T().timedSub(TIMED_N, timedMins(sub)))}</p>${tb !== undefined ? `<span class="more">${esc(T().best)}: ${tb}%</span>` : ""}</button>
+      <button type="button" class="card timed" data-act="${timedLocked(sub) ? "upgrade" : "timed"}" data-arg="${sub.id}"><span class="tag">${timedLocked(sub) ? "🔒" : "⏱"} ${esc(T().timed)}</span><p>${esc(T().timedSub(TIMED_N, timedMins(sub)))}</p>${tb !== undefined ? `<span class="more">${esc(T().best)}: ${tb}%</span>` : ""}</button>
     </div>`;
 }
 
@@ -234,7 +248,15 @@ function viewLesson(sub, t) {
       ${leg}${rules}
       <div class="example"><h3>${esc(T().example)}</h3>${exBody}<ol>${steps}</ol></div>
     </div>
-    <div class="go sticky-go"><button type="button" class="btn primary" data-act="start" data-arg="${t.id}">${esc(T().start(t.questions.length))}</button></div>`;
+    <h3>${esc(T().practiceL)}</h3><div class="levels">${LEVELS.map(lv => levelButton(t, lv)).join("")}</div>`;
+}
+// One practice level on a topic page: start it, or a lock (free plan), or "coming soon" (no questions yet).
+function levelButton(t, lv) {
+  const n = levelQs(t, lv).length, b = saved.best[levelKey(t.id, lv)];
+  const name = `<b>${esc(T().levelN(lv))}</b><small>${esc(T().levelName[lv])}</small>`;
+  if (lv > 1 && !paid()) return `<button type="button" class="lvl locked" data-act="upgrade"><span class="ic">🔒</span>${name}<small>${esc(T().fullAccess)}</small></button>`;
+  if (!n) return `<div class="lvl soon"><span class="ic">⏳</span>${name}<small>${esc(T().soon)}</small></div>`;
+  return `<button type="button" class="lvl${b >= 80 ? " done" : ""}" data-act="start" data-arg="${t.id}|${lv}"><span class="ic">${b >= 80 ? "⭐" : "▶"}</span>${name}<small>${b === undefined ? esc(T().qCount(n)) : `${esc(T().best)}: ${b}%`}</small></button>`;
 }
 
 function questionBody(q) {
@@ -303,7 +325,7 @@ function viewResults() {
   const ts = topicsOf(sub);
   const idx = topicId ? ts.findIndex(t => t.id === topicId) : -1;
   const nextT = idx >= 0 && idx < ts.length - 1 ? ts[idx + 1] : null;
-  const retry = timed ? `data-act="timed" data-arg="${subjectId}"` : `data-act="${topicId ? "start" : "mixed"}" data-arg="${topicId || subjectId}"`;
+  const retry = timed ? `data-act="${timedLocked(sub) ? "upgrade" : "timed"}" data-arg="${subjectId}"` : `data-act="${topicId ? "start" : "mixed"}" data-arg="${topicId ? `${topicId}|${quiz.level || 1}` : subjectId}"`;
   const actions = [
     nextT && p >= 50 ? `<button type="button" class="btn primary" data-act="topic" data-arg="${nextT.id}">${esc(T().nextTopic)}: ${tx(nextT.title)}</button>` : "",
     `<button type="button" class="btn${nextT && p >= 50 ? "" : " primary"}" ${retry}>${esc(T().retry)}</button>`,
@@ -352,7 +374,7 @@ function viewSignup() {
       ${field("email", T().email, "email", 'autocomplete="email" required')}
       ${field("password", T().password, "password", 'autocomplete="new-password" minlength="8" required', T().pwHint)}
       ${role === "student"
-        ? field("code", T().accessCode, "text", 'autocomplete="off" autocapitalize="characters" placeholder="ABCD-2345" required', T().accessHint)
+        ? field("code", T().accessCodeOpt, "text", 'autocomplete="off" autocapitalize="characters" placeholder="ABCD-2345"', T().accessHintOpt)
         : field("code", T().childCode, "text", 'autocomplete="off" autocapitalize="characters" placeholder="ABC234" required', T().childCodeHint)}
       <div class="go"><button class="btn primary" type="submit">${esc(T().signupBtn)}</button></div>
     </form>
@@ -378,10 +400,19 @@ const redeemForm = () => `<form class="form" data-form="redeem">
     ${field("code", T().addCode, "text", 'autocomplete="off" autocapitalize="characters" placeholder="ABCD-2345" required', T().addCodeHint)}
     <div class="go"><button class="btn" type="submit">${esc(T().addBtn)}</button></div></form>`;
 
-function viewExpired() {
-  return `<div class="head"><div class="eyebrow">🎟 ${esc(me.nickname)}</div><h1>${esc(T().expiredTitle)}</h1><p class="lede">${esc(T().expiredLede)}</p></div>
-    ${flashBox()}<div class="card">${redeemForm()}</div>
-    <div class="go"><button type="button" class="btn quiet" data-act="signout">${esc(T().signOut)}</button></div>`;
+// What full access adds, and the box for a code. Shown to free students (and to anyone whose access has ended).
+function viewUpgrade() {
+  const ended = me && me.access_until && !hasAccess();
+  const row = (free, full, label) => `<li><span>${esc(label)}</span><span class="pl">${free}</span><span class="pl">${full}</span></li>`;
+  const rows = [
+    row("✓", "✓", T().perkLessons), row("✓", "✓", T().perkLevel1), row("—", "✓", T().perkLevels23),
+    row("1", "∞", T().perkTimed), row("—", "✓", T().perkParents), row("✓", "✓", T().perkGame)
+  ].join("");
+  return `${crumbs([{ label: T().tabToday, act: "home" }])}
+    <div class="head"><div class="eyebrow">⭐ ${esc(T().fullAccess)}</div><h1>${esc(ended ? T().expiredTitle : T().upTitle)}</h1><p class="lede">${esc(ended ? T().expiredLede : T().upLede)}</p></div>
+    <ul class="plans"><li class="hd"><span></span><span class="pl">${esc(T().planFree)}</span><span class="pl">⭐ ${esc(T().planFull)}</span></li>${rows}</ul>
+    ${flashBox()}${me ? `<div class="card">${redeemForm()}</div>` : ""}
+    <p class="small">${esc(T().upWhere)}</p>`;
 }
 
 /* ---------- admin: access codes and numbers ---------- */
@@ -439,7 +470,7 @@ function viewSettings() {
       <div class="head"><div class="eyebrow">${esc(T().parent)}</div><h1>${esc(T().account)}</h1>${email}</div>${flashBox()}${adminBtn}${out}${about}`;
   }
   return `<div class="head"><div class="eyebrow">${esc(T().account)}</div><h1>${esc(me.nickname)}</h1>${email}</div>${flashBox()}
-    <div class="card"><span class="tag">🎟 ${esc(me.access_until ? T().accessUntil(dateLong(me.access_until)) : T().expiredTitle)}</span>${redeemForm()}</div>
+    <div class="card"><span class="tag">${hasAccess() ? `⭐ ${esc(T().accessUntil(dateLong(me.access_until)))}` : `🎟 ${esc(T().planFree)}`}</span>${hasAccess() ? "" : `<p>${esc(T().upCard)}</p><button type="button" class="link" data-act="upgrade">${esc(T().upGo)}</button>`}${redeemForm()}</div>
     ${adminBtn}
     <div class="card"><span class="tag">👪 ${esc(T().linkCodeTitle)}</span><p class="code">${esc(me.link_code || "")}</p><p>${esc(T().linkCodeHint)}</p>${view.parents !== undefined ? `<p><b>${esc(T().parentsN(view.parents))}</b></p>` : ""}</div>
     <form class="form" data-form="nick">${field("nickname", T().nickname, "text", `maxlength="30" required value="${esc(me.nickname)}"`, T().nickHint)}
@@ -450,11 +481,14 @@ function viewSettings() {
 // A child's saved progress, filled with defaults so old or empty data still renders.
 function childData(c) { const d = Object.assign(defaults(), c.data || {}); d.stats = Object.assign(freshStats(), d.stats); return d; }
 const lastDay = d => Object.keys(d.days).filter(k => d.days[k]).sort().pop();
+// The parent dashboard is part of the paid plan: the database only returns progress for children with access.
+const childPaid = c => !Cloud.enabled || !!(c.access_until && new Date(c.access_until).getTime() > Date.now());
 const masteryOf = (best, sub) => { const ts = topicsOf(sub); return ts.length ? Math.round(ts.reduce((a, t) => a + (best[t.id] || 0), 0) / ts.length) : 0; };
 
 function viewParent() {
   const list = children === null ? `<p class="lede">${esc(T().loading)}</p>` : !children.length ? `<p class="lede">${esc(T().noChildren)}</p>` :
     children.map(c => {
+      if (!childPaid(c)) return `<button type="button" class="card kid" data-act="child" data-arg="${c.id}"><h2>${esc(c.nickname)}</h2><span class="pill">🔒 ${esc(T().planFree)}</span><p>${esc(T().childFree)}</p></button>`;
       const d = childData(c), lv = levelInfo(d.xp), last = lastDay(d), streak = streakOf(d.days);
       return `<button type="button" class="card kid" data-act="child" data-arg="${c.id}"><h2>${esc(c.nickname)}</h2><span class="num">${d.xp}<small> XP</small></span><p><span class="lvtag">${esc(T().level(lv.level))}</span> ${esc(lv.title)} · 🔥 ${streak}</p><p>${esc(last ? T().lastActive(dateOf(last)) : T().never)}</p></button>`;
     }).join("");
@@ -468,6 +502,11 @@ function viewParent() {
 function viewChild() {
   const c = (children || []).find(x => x.id === view.id);
   if (!c) return viewParent();
+  if (!childPaid(c)) return `${crumbs([{ label: T().parentTitle, act: "parent" }])}
+    <div class="head"><div class="eyebrow">🔒 ${esc(T().planFree)}</div><h1>${esc(c.nickname)}</h1><p class="lede">${esc(T().childFreeLong)}</p></div>
+    <ul class="plain">${[T().perkLevels23, T().perkTimed, T().perkParents].map(p => `<li>${esc(p)}</li>`).join("")}</ul>
+    <p class="small">${esc(T().upWhere)}</p>
+    ${flashBox()}<div class="go"><button type="button" class="btn quiet" data-act="unlink" data-arg="${c.id}">${esc(view.armed ? T().unlinkConfirm : T().unlink)}</button></div>`;
   const d = childData(c), lv = levelInfo(d.xp), last = lastDay(d), streak = streakOf(d.days);
   const days = [];
   for (let i = 13; i >= 0; i--) { const t = new Date(); t.setDate(t.getDate() - i); const k = dayKey(t); days.push({ k, n: d.days[k] || 0 }); }
@@ -577,7 +616,7 @@ document.getElementById("app").addEventListener("submit", async e => {
       me.access_until = ends;
       flash = { kind: "ok", msg: () => T().codeAdded(dateLong(ends)) };
       Cloud.flush();  // progress made while access had ended can be saved now
-      if (view.name === "expired") go({ name: "home" }, true); else render();
+      if (view.name === "upgrade") go({ name: "home" }, true); else render();
       return;
     }
     if (kind === "codes") {
@@ -604,20 +643,18 @@ document.getElementById("app").addEventListener("submit", async e => {
 /* ---------- render ---------- */
 const PUBLIC_VIEWS = ["login", "signup", "forgot", "newpw", "loading"];
 const PARENT_VIEWS = ["parent", "child", "settings", "newpw", "loading"];
-const EXPIRED_VIEWS = ["expired", "settings", "newpw", "loading"];
 const ADMIN_VIEWS = ["admin", "batch"];
 function render() {
-  // Accounts on: nothing but the login pages until someone logs in, parents only see their own pages, and a
-  // student whose access has ended only sees the page for adding a code. Admin pages need an admin.
+  // Accounts on: nothing but the login pages until someone logs in, and parents only see their own pages.
+  // Free students use the app normally; paid parts show a lock that leads to the Upgrade page.
   if (Cloud.enabled && !me && !PUBLIC_VIEWS.includes(view.name)) view = { name: "login" };
   if (ADMIN_VIEWS.includes(view.name) && !(me && me.is_admin)) view = { name: "home" };
   const adminPage = ADMIN_VIEWS.includes(view.name);
   if (me && me.role === "parent" && !PARENT_VIEWS.includes(view.name) && !adminPage) view = { name: "parent" };
-  if (me && me.role === "student" && !hasAccess() && !EXPIRED_VIEWS.includes(view.name) && !adminPage) view = { name: "expired" };
   document.documentElement.lang = L();
   document.getElementById("brand").innerHTML = T().brand;
   // Students (and everyone when accounts are off) get the tab bar and level chip; parents and logged-out visitors don't.
-  const player = !Cloud.enabled || (me && me.role === "student" && hasAccess());
+  const player = !Cloud.enabled || (me && me.role === "student");
   const tabbar = document.getElementById("tabbar"), lvchip = document.getElementById("lvchip");
   if (tabbar) tabbar.hidden = !player;
   if (lvchip) {
@@ -625,7 +662,7 @@ function render() {
     lvchip.hidden = !player; lvchip.textContent = `⭐ ${n}`;
     lvchip.title = T().level(n); lvchip.setAttribute("aria-label", T().level(n));
   }
-  const tab = { home: "home", guide: "home", subjects: "subjects", subject: "subjects", topic: "subjects", results: "subjects", trophies: "trophies", settings: "settings" }[view.name];
+  const tab = { home: "home", guide: "home", upgrade: "home", subjects: "subjects", subject: "subjects", topic: "subjects", results: "subjects", trophies: "trophies", settings: "settings" }[view.name];
   const labels = { home: T().tabToday, subjects: T().home, trophies: T().trophies, settings: T().account };
   document.querySelectorAll("#tabbar [data-tab]").forEach(b => {
     b.querySelector("span").textContent = labels[b.dataset.tab];
@@ -641,7 +678,7 @@ function render() {
   else if (view.name === "forgot") app.innerHTML = viewForgot();
   else if (view.name === "newpw") app.innerHTML = viewNewPw();
   else if (view.name === "settings") app.innerHTML = viewSettings();
-  else if (view.name === "expired") app.innerHTML = viewExpired();
+  else if (view.name === "upgrade") app.innerHTML = viewUpgrade();
   else if (view.name === "admin") app.innerHTML = viewAdmin();
   else if (view.name === "batch") app.innerHTML = viewBatch();
   else if (view.name === "parent") app.innerHTML = viewParent();
@@ -660,8 +697,8 @@ function findTopic(id) {
   for (const s of SUBJECTS) { const t = s.topics.find(x => x.id === id); if (t) return { sub: s, t }; }
   return null;
 }
-function startQuiz(subjectId, topicId, items, mode = "practice") {
-  quiz = { mode, subjectId, topicId, items, i: 0, picked: undefined, answers: [], gain: [], combo: 0, xp: 0, started: Date.now() };
+function startQuiz(subjectId, topicId, items, mode = "practice", level = 1) {
+  quiz = { mode, subjectId, topicId, level, items, i: 0, picked: undefined, answers: [], gain: [], combo: 0, xp: 0, started: Date.now() };
   if (mode === "timed") {
     quiz.deadline = quiz.started + timedMins(subject(subjectId)) * 60000;
     clearInterval(timer); timer = setInterval(tick, 500);
@@ -742,10 +779,17 @@ document.getElementById("app").addEventListener("click", e => {
   else if (act === "goal") { saved.goal = Number(arg); persist(); render(); }
   else if (act === "subject") go({ name: "subject", id: arg });
   else if (act === "topic") { const f = findTopic(arg); go({ name: "topic", subjectId: f.sub.id, id: arg }); }
-  else if (act === "start") { const f = findTopic(arg); startQuiz(f.sub.id, arg, f.t.questions.map(q => ({ q, topic: f.t }))); }
+  else if (act === "upgrade") go({ name: "upgrade" });
+  else if (act === "start") {
+    const [tid, lvText] = arg.split("|"), lv = Number(lvText) || 1, f = findTopic(tid);
+    if (lv > 1 && !paid()) { go({ name: "upgrade" }); return; }
+    startQuiz(f.sub.id, tid, levelQs(f.t, lv).map(q => ({ q, topic: f.t })), "practice", lv);
+  }
   else if (act === "mixed" || act === "timed") {
     const sub = subject(arg);
-    const pool = topicsOf(sub).flatMap(t => t.questions.map(q => ({ q, topic: t })));
+    if (act === "timed" && timedLocked(sub)) { go({ name: "upgrade" }); return; }
+    // Free students mix level 1; full access mixes every level written for this language.
+    const pool = topicsOf(sub).flatMap(t => t.questions.filter(q => shownQ(q) && (levelOf(q) === 1 || paid())).map(q => ({ q, topic: t })));
     startQuiz(arg, null, shuffle(pool).slice(0, act === "timed" ? TIMED_N : 8), act === "timed" ? "timed" : "practice");
   }
   else if (act === "check") {
@@ -771,7 +815,7 @@ document.getElementById("app").addEventListener("click", e => {
   else if (act === "finish") {
     const { items, topicId, subjectId } = quiz;
     const p = pct(rightCount(quiz), items.length);
-    const key = topicId || "mixed-" + subjectId;
+    const key = topicId ? levelKey(topicId, quiz.level || 1) : "mixed-" + subjectId;
     const prev = saved.best[key] || 0;
     saved.best[key] = Math.max(prev, p);
     // The mastery bonus is paid once: best never goes down, so prev < 80 only until the first 80%.

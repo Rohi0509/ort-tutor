@@ -31,7 +31,9 @@ function visible(table) {
   const me = current && current.id;
   const kids = DB.links.filter(l => l.parent_id === me).map(l => l.student_id);
   if (table === "profiles") return DB.profiles.filter(p => p.id === me || kids.includes(p.id));
-  if (table === "progress") return DB.progress.filter(p => p.user_id === me || kids.includes(p.user_id));
+  // A parent sees a child's progress only while the child has full access.
+  const paidKid = id => { const c = DB.profiles.find(p => p.id === id); return c && new Date(c.access_until) > new Date(); };
+  if (table === "progress") return DB.progress.filter(p => p.user_id === me || (kids.includes(p.user_id) && paidKid(p.user_id)));
   if (table === "parent_links") return DB.links.filter(l => l.parent_id === me || l.student_id === me);
 }
 function query(table) {
@@ -50,8 +52,7 @@ function query(table) {
     if (op === "update") { rows.filter(r => r.id === current.id).forEach(r => Object.assign(r, payload)); return ok_(null); }
     if (op === "delete") { DB.links = DB.links.filter(l => !rows.includes(l)); return ok_(null); }
     if (op === "upsert") {
-      const p = profile();
-      if (payload.user_id !== current.id || p.role !== "student" || !(new Date(p.access_until) > new Date()))
+      if (payload.user_id !== current.id || profile().role !== "student")  // every student saves, free or not
         return err('new row violates row-level security policy for table "progress"');
       const ex = DB.progress.find(x => x.user_id === payload.user_id);
       if (ex) Object.assign(ex, JSON.parse(JSON.stringify(payload))); else DB.progress.push(JSON.parse(JSON.stringify(payload)));
@@ -69,8 +70,8 @@ const mock = {
       const id = "u" + (uid + 1);
       if (m.role === "student") {
         if (!m.nickname) return err("Database error saving new user");
-        const ends = takeCode(m.code, id);
-        if (!ends) return err("Database error saving new user");
+        const ends = norm(m.code) ? takeCode(m.code, id) : null;  // no code = free plan
+        if (norm(m.code) && !ends) return err("Database error saving new user");
         DB.profiles.push({ id, role: "student", nickname: m.nickname, link_code: "ABC23" + (uid + 1), access_until: ends, is_admin: false });
       } else {
         const kid = DB.profiles.find(p => p.role === "student" && p.link_code === norm(m.code));
@@ -205,6 +206,24 @@ async function logOut() { click('#tabbar [data-tab="settings"]:not([hidden])'); 
     ok(me && me.nickname === "Nurik", "second student signs up with their own code");
     await logOut();
 
+    // Free plan: sign up without a code
+    click('[data-act="signup"]');
+    fill("nickname", "Sam"); fill("email", "sam@test.com"); fill("password", "secret123"); submit(); await wait(250);
+    ok(me && me.nickname === "Sam" && !me.access_until && view.name === "home", "student signs up free without a code");
+    ok(!$("#tabbar").hidden && !!$('.card.upsell'), "free student gets the app and an upgrade card");
+    click('#tabbar [data-tab="subjects"]'); click('[data-act="subject"][data-arg="math"]'); click('[data-act="topic"]');
+    ok(document.querySelectorAll(".lvl.locked").length === 2 && !!$('.lvl[data-act="start"]'), "levels 2 and 3 locked, level 1 open");
+    click('.lvl.locked'); ok(view.name === "upgrade" && /Free plan/.test(app()), "a lock opens the upgrade page");
+    click('[data-act="home"]'); click('#tabbar [data-tab="subjects"]'); click('[data-act="subject"][data-arg="math"]'); click('[data-act="topic"]');
+    click('.lvl[data-act="start"]'); answerRight(); await wait(1800);
+    ok(DB.progress.some(p => p.user_id === "u3" && p.data.xp === 10), "free student's progress is saved");
+    click('[data-act="subject"]'); click('[data-act="timed"]');
+    for (let k = 0; k < 10; k++) click('[data-act="tnext"]');
+    ok(view.name === "results", "free student gets one timed challenge per subject");
+    click('[data-act="subject"]');
+    ok(!!$('.card.timed[data-act="upgrade"]'), "the next timed challenge in that subject is locked");
+    await logOut();
+
     // Parent signs up with the child's link code
     click('[data-act="signup"]'); click('[data-act="role"][data-arg="parent"]');
     ok(!$('.form input[name="nickname"]') && /child's link code/.test(app()), "parents give their child's link code, no nickname");
@@ -215,27 +234,35 @@ async function logOut() { click('#tabbar [data-tab="settings"]:not([hidden])'); 
     click("#brand"); ok(view.name === "parent", "parent stays on parent pages");
     fill("code", "abc232"); submit(); await wait(300);
     ok(/Nurik is now linked/.test(flashText()) && document.querySelectorAll('[data-act="child"]').length === 2, "parent links a second child");
+    fill("code", "abc233"); submit(); await wait(300);
+    ok(document.querySelectorAll('[data-act="child"]').length === 3 && /Free plan/.test(app()), "a free child is listed with the free plan");
+    click('[data-act="child"][data-arg="u3"]'); await wait();
+    ok(/free plan/.test(app()) && !app().includes("Last 14 days"), "parent can't see a free child's progress");
+    click('[data-act="parent"]'); await wait();
     click('[data-act="child"][data-arg="u1"]'); await wait();
-    ok(app().includes("Aibek K") && app().includes("Last 14 days") && /500\s*XP/.test(app()), "parent sees the child's progress");
+    ok(app().includes("Aibek K") && app().includes("Last 14 days") && /500\s*XP/.test(app()), "parent sees a full-access child's progress");
     ok(!$('[data-act="start"]') && !$('[data-act="topic"]'), "parent page has no quiz buttons");
     click('[data-act="unlink"]'); click('[data-act="unlink"]'); await wait(150);
-    ok(DB.links.length === 1 && document.querySelectorAll('[data-act="child"]').length === 1, "unlink child");
+    ok(DB.links.length === 2 && document.querySelectorAll('[data-act="child"]').length === 2, "unlink child");
     ok($("#tabbar").hidden, "no tab bar for parents");
     click('[data-act="settings"]'); await wait(); click('[data-act="signout"]'); await wait(150);
 
-    // Access runs out
+    // Access runs out: back to the free plan, progress kept, a new code brings full access back
     DB.profiles[0].access_until = past;
     localStorage.removeItem("ort-tutor-me:u1");
     await logIn("kid@test.com", "wrong");
     ok(/wrong/.test(flashText()), "wrong password message: " + flashText());
     await logIn("kid@test.com", "secret123");
-    ok(view.name === "expired" && $("#tabbar").hidden, "student with ended access only sees the add-code page");
-    click("#brand"); ok(view.name === "expired", "can't get past the add-code page");
+    ok(view.name === "home" && !$("#tabbar").hidden && saved.xp === 500, "ended access means the free plan, with progress kept");
+    click('#tabbar [data-tab="subjects"]'); click('[data-act="subject"][data-arg="math"]'); click('[data-act="topic"]');
+    ok(document.querySelectorAll(".lvl.locked").length === 2, "levels 2 and 3 locked again");
+    click('.lvl.locked'); await wait();
     fill("code", "SHARED22"); submit(); await wait();
-    ok(/already been used/.test(flashText()) && view.name === "expired", "someone else's used code doesn't renew access");
+    ok(/already been used/.test(flashText()) && view.name === "upgrade", "someone else's used code doesn't renew access");
     fill("code", "renew-444"); submit(); await wait(200);
-    ok(view.name === "home" && new Date(DB.profiles[0].access_until) > new Date() && /Code added/.test(flashText()), "a new code renews access");
-    ok(saved.xp === 500, "progress kept through the gap");
+    ok(view.name === "home" && new Date(DB.profiles[0].access_until) > new Date() && /Code added/.test(flashText()), "a new code brings full access back");
+    click('#tabbar [data-tab="subjects"]'); click('[data-act="subject"][data-arg="math"]'); click('[data-act="topic"]');
+    ok(!$(".lvl.locked") && document.querySelectorAll(".lvl.soon").length === 2, "levels 2 and 3 open (marked coming soon until they have questions)");
 
     // Admin: make codes in the app
     DB.profiles[0].is_admin = true;

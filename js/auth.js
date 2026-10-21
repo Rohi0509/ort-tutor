@@ -60,7 +60,7 @@ const Cloud = (() => {
       email, password,
       options: { data: { role, nickname: role === "student" ? nickname : null, code }, emailRedirectTo: here() }
     });
-    if (res.error && /Database error saving new user/i.test(res.error.message || "")) throw fail(role === "parent" ? "noChildSignup" : "badCode");
+    if (res.error && /Database error saving new user/i.test(res.error.message || "")) throw fail(role === "parent" ? "noChildSignup" : code ? "badCode" : "generic");
     const data = must(res);
     return { needsConfirm: !data.session };
   };
@@ -147,10 +147,11 @@ const Cloud = (() => {
     const links = must(await sb.from("parent_links").select("student_id").eq("parent_id", C.user.id));
     const ids = links.map(l => l.student_id);
     if (!ids.length) return [];
-    const profiles = must(await sb.from("profiles").select("id, nickname").in("id", ids));
+    const profiles = must(await sb.from("profiles").select("id, nickname, access_until").in("id", ids));
+    // Progress comes back only for children with full access (the database decides; see schema.sql).
     const progress = must(await sb.from("progress").select("user_id, data").in("user_id", ids));
     const byUser = Object.fromEntries(progress.map(p => [p.user_id, p.data]));
-    return profiles.map(p => ({ id: p.id, nickname: p.nickname, data: byUser[p.id] || null }))
+    return profiles.map(p => ({ id: p.id, nickname: p.nickname, access_until: p.access_until, data: byUser[p.id] || null }))
       .sort((a, b) => a.nickname.localeCompare(b.nickname));
   };
   // Students: how many parent accounts can see my progress.

@@ -168,6 +168,25 @@ button.card:active { transform: translateY(1px); }
 .guide[open] summary { margin-bottom: 4px; }
 .guide .link { justify-self: start; }
 
+/* ---------- practice levels and plans ---------- */
+.levels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.lvl { display: grid; justify-items: center; text-align: center; gap: 2px; padding: 14px 8px; border-radius: var(--r); border: 2px solid var(--accent); background: var(--surface); box-shadow: 0 3px 0 var(--accent); font: inherit; cursor: pointer; }
+.lvl .ic { font-size: 1.6rem; line-height: 1.2; }
+.lvl b { font-family: var(--f-display); font-weight: 600; }
+.lvl small { font-size: .78rem; color: var(--muted); }
+.lvl.done { border-color: var(--hi-ink); background: color-mix(in srgb, var(--hi) 30%, var(--surface)); box-shadow: 0 3px 0 var(--hi-ink); }
+.lvl.locked { border: 2px dashed var(--gold); box-shadow: none; background: var(--gold-soft); }
+.lvl.soon { border: 2px dashed var(--line); box-shadow: none; cursor: default; opacity: .75; }
+.card.upsell { border: 2px solid var(--gold); background: linear-gradient(135deg, var(--surface) 50%, var(--gold-soft)); }
+.card.upsell .tag, .card.upsell .more { color: var(--gold); }
+.plans { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.plans li { display: grid; grid-template-columns: minmax(0, 1fr) 70px 90px; gap: 8px; align-items: center; padding: 10px 14px; }
+.plans li + li { border-top: 1px solid var(--line); }
+.plans .hd { font-weight: 800; font-size: .85rem; background: var(--bg); }
+.plans .pl { text-align: center; font-weight: 800; }
+.plans li .pl:last-child { color: var(--good); }
+@media (max-width: 400px) { .levels { gap: 6px; } .lvl { padding: 12px 4px; } .plans li { grid-template-columns: minmax(0, 1fr) 56px 74px; } }
+
 /* ---------- lesson ---------- */
 .lesson { display: grid; gap: 16px; }
 .points { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: p; }

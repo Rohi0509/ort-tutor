@@ -70,15 +70,28 @@ for (const l of ["en", "ru", "ky"]) {
     view = v; render(); chk(els.app.innerHTML, l + " " + v.name + (v.role || ""));
     if (view.name !== v.name) { bad++; console.log("Redirected away from", l, v.name, "to", view.name); }
   }
-  // A student whose access has ended only gets the page for adding a code.
+  // A free student (no access, or access ended) uses the app; paid parts show locks that lead to Upgrade.
+  Cloud.enabled = true;
   me.access_until = "2000-01-01T00:00:00Z";
-  view = { name: "home" }; render(); chk(els.app.innerHTML, l + " expired");
-  if (view.name !== "expired") { bad++; console.log("Expired student not stopped:", l, view.name); }
+  const t0 = SUBJECTS[0].topics[0];
+  for (const v of [{ name: "home" }, { name: "subject", id: SUBJECTS[0].id }, { name: "topic", subjectId: SUBJECTS[0].id, id: t0.id }, { name: "upgrade" }, { name: "settings" }]) {
+    view = v; render(); chk(els.app.innerHTML, l + " free " + v.name);
+    if (view.name !== v.name) { bad++; console.log("Free student redirected:", l, v.name, "->", view.name); }
+  }
+  view = { name: "topic", subjectId: SUBJECTS[0].id, id: t0.id }; render();
+  if ((els.app.innerHTML.match(/class="lvl locked"/g) || []).length !== 2) { bad++; console.log("Levels 2 and 3 not locked for free:", l); }
+  me.access_until = "2099-07-01T00:00:00Z"; render();
+  if (/class="lvl locked"/.test(els.app.innerHTML)) { bad++; console.log("Levels locked with full access:", l); }
+  Cloud.enabled = false;
   for (const k of Object.keys(UI.en)) if (UI[l][k] === undefined) { bad++; console.log("Interface text missing:", l, k); }
   for (const k of Object.keys(UI.en.err)) if (!UI[l].err[k]) { bad++; console.log("Error text missing:", l, k); }
   for (const k of Object.keys(UI.en.sync)) if (!UI[l].sync[k]) { bad++; console.log("Sync text missing:", l, k); }
   me = { id: "p1", role: "parent", nickname: null, link_code: null };
-  children = [{ id: "c1", nickname: "Aibek", data: JSON.parse(JSON.stringify(saved)) }, { id: "c2", nickname: "Nuri", data: null }];
+  children = [{ id: "c1", nickname: "Aibek", access_until: "2099-07-01T00:00:00Z", data: JSON.parse(JSON.stringify(saved)) }, { id: "c2", nickname: "Nuri", access_until: null, data: null }];
+  Cloud.enabled = true;  // so the free child (c2) shows the free-plan page
+  view = { name: "child", id: "c2" }; render(); chk(els.app.innerHTML, l + " parent free child");
+  if (!els.app.innerHTML.includes(T().childFreeLong)) { bad++; console.log("Free child not explained to parent:", l); }
+  Cloud.enabled = false;
   for (const v of [{ name: "parent" }, { name: "child", id: "c1" }, { name: "child", id: "c2", armed: true }, { name: "settings" }, { name: "home" }]) {
     view = v; render(); chk(els.app.innerHTML, l + " parent " + v.name + (v.id || ""));
   }

@@ -301,6 +301,44 @@ Object.assign(UI.ru, { guideTitle: "Как устроен ОРТ", guideLede: "�
 Object.assign(UI.ky, { guideTitle: "ЖРТ кандай түзүлгөн", guideLede: "Тесттин ар бир бөлүгүндө эмне талап кылынат, канча убакыт берилет, тест күнүндөгү эрежелер жана жооп баракчасын кантип толтуруу керек.",
   guideCard: "Бөлүмдөр, убакыт, эрежелер жана жооп баракчасы: эмне күтүп турганын алдын ала билиңиз.", onOrt: "ЖРТда", tipsL: "Кеңештер", allAbout: "Тест жөнүндө баары →", paceNote: "чыныгы ЖРТнын темпинде" });
 
+/* Plans (free / full access) and practice levels. */
+Object.assign(UI.en, {
+  practiceL: "Practice", levelN: n => `Level ${n}`, levelName: { 1: "Basics", 2: "ORT standard", 3: "ORT hard" }, qCount: n => `${n} questions`,
+  fullAccess: "Full access", planFree: "Free plan", planFull: "Full access",
+  upTitle: "Get ready for the real ORT", upLede: "Level 1 teaches the basics. The real test goes further: full access adds ORT-standard and ORT-hard practice, more timed challenges and the parent dashboard.",
+  upCard: "Unlock levels 2 and 3, unlimited timed challenges and the parent dashboard.", upGo: "See what's included →",
+  upWhere: "Get an access code from your school or tutor, or buy one. Each code works for one student until the date on it.",
+  perkLessons: "Lessons for every topic", perkLevel1: "Level 1 practice (basics)", perkLevels23: "Levels 2 and 3 (ORT standard and hard)",
+  perkTimed: "Timed challenges per subject", perkParents: "Parent dashboard", perkGame: "XP, levels and badges",
+  accessCodeOpt: "Access code (optional)", accessHintOpt: "Leave it empty to start free. A code from your school, tutor or a purchase gives full access.",
+  childFree: "Free plan: progress is visible with full access.",
+  childFreeLong: "This child is on the free plan. Progress tracking for parents is part of full access. With an access code your child also gets:"
+});
+Object.assign(UI.ru, {
+  practiceL: "Практика", levelN: n => `Уровень ${n}`, levelName: { 1: "Основы", 2: "Как на ОРТ", 3: "Сложный ОРТ" }, qCount: n => `Вопросов: ${n}`,
+  fullAccess: "Полный доступ", planFree: "Бесплатный план", planFull: "Полный доступ",
+  upTitle: "Готовьтесь к настоящему ОРТ", upLede: "Уровень 1 учит основам. Настоящий тест сложнее: полный доступ добавляет практику уровня ОРТ и сложного ОРТ, больше испытаний на время и страницу для родителей.",
+  upCard: "Откройте уровни 2 и 3, испытания на время без ограничений и страницу для родителей.", upGo: "Что входит →",
+  upWhere: "Код доступа можно получить в школе или у репетитора либо купить. Каждый код действует для одного ученика до указанной даты.",
+  perkLessons: "Теория по всем темам", perkLevel1: "Практика уровня 1 (основы)", perkLevels23: "Уровни 2 и 3 (как на ОРТ и сложный)",
+  perkTimed: "Испытания на время по предметам", perkParents: "Страница для родителей", perkGame: "XP, уровни и значки",
+  accessCodeOpt: "Код доступа (необязательно)", accessHintOpt: "Оставьте пустым, чтобы начать бесплатно. Код от школы, репетитора или после покупки даёт полный доступ.",
+  childFree: "Бесплатный план: прогресс виден при полном доступе.",
+  childFreeLong: "У ребёнка бесплатный план. Отслеживание прогресса для родителей входит в полный доступ. С кодом доступа ребёнок также получит:"
+});
+Object.assign(UI.ky, {
+  practiceL: "Машыгуу", levelN: n => `${n}-деңгээл`, levelName: { 1: "Негиздер", 2: "ЖРТдагыдай", 3: "Татаал ЖРТ" }, qCount: n => `${n} суроо`,
+  fullAccess: "Толук мүмкүнчүлүк", planFree: "Акысыз план", planFull: "Толук мүмкүнчүлүк",
+  upTitle: "Чыныгы ЖРТга даярданыңыз", upLede: "1-деңгээл негиздерди үйрөтөт. Чыныгы тест татаалыраак: толук мүмкүнчүлүк ЖРТдагыдай жана татаал ЖРТ деңгээлиндеги машыгууну, убакытка көбүрөөк сыноону жана ата-энелер үчүн баракты кошот.",
+  upCard: "2- жана 3-деңгээлдерди, чексиз убакытка сыноону жана ата-энелер үчүн баракты ачыңыз.", upGo: "Эмнелер кирет →",
+  upWhere: "Кирүү кодун мектептен же репетитордон алса болот, же сатып алса болот. Ар бир код бир окуучу үчүн көрсөтүлгөн күнгө чейин иштейт.",
+  perkLessons: "Бардык темалар боюнча теория", perkLevel1: "1-деңгээлдеги машыгуу (негиздер)", perkLevels23: "2- жана 3-деңгээлдер (ЖРТдагыдай жана татаал)",
+  perkTimed: "Предметтер боюнча убакытка сыноо", perkParents: "Ата-энелер үчүн барак", perkGame: "XP, деңгээлдер жана белгилер",
+  accessCodeOpt: "Кирүү коду (милдеттүү эмес)", accessHintOpt: "Акысыз баштоо үчүн бош калтырыңыз. Мектептен, репетитордон же сатып алгандан кийин алынган код толук мүмкүнчүлүк берет.",
+  childFree: "Акысыз план: прогресс толук мүмкүнчүлүк менен көрүнөт.",
+  childFreeLong: "Балаңыз акысыз планда. Ата-эне үчүн прогрессти көзөмөлдөө толук мүмкүнчүлүккө кирет. Кирүү коду менен балаңыз дагы төмөнкүлөрдү алат:"
+});
+
 const CMP_OPTS = {
   en: ["The quantity in Column А is greater", "The quantity in Column Б is greater", "The quantities are equal", "Not enough information to decide"],
   ru: ["Величина в колонке А больше", "Величина в колонке Б больше", "Величины равны", "Информации недостаточно"],
