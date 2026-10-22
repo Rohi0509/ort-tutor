@@ -85,6 +85,84 @@ SUBJECTS.push(
         ]
       },
       {
+        id: "gr-ru-spell", only: "ru",
+        title: { en: "Russian: spelling (prefixes, Н/НН, Ь)", ru: "Орфография: приставки, Н и НН, Ь" },
+        blurb: { en: "The spelling rules the test asks about most often.", ru: "Правила правописания, которые чаще всего встречаются в тесте." },
+        points: [
+          { en: "ПРЕ- means “very” or “across” (прекрасный, преграда); ПРИ- means “near, joining, not fully” (прибежать, пришить, приоткрыть).", ru: "ПРЕ- значит «очень» или «пере-» (прекрасный, преграда); ПРИ- — приближение, присоединение, неполнота действия (прибежать, пришить, приоткрыть)." },
+          { en: "After a Russian prefix ending in a consonant, И turns into Ы: играть → разыграть, искать → подыскать. After меж-, сверх- and foreign prefixes И stays: межинститутский, сверхинтересный, постинфарктный.", ru: "После русских приставок на согласный И переходит в Ы: играть → разыграть, искать → подыскать. После меж-, сверх- и иноязычных приставок И сохраняется: межинститутский, сверхинтересный, постинфарктный." },
+          { en: "Adjectives in -ан-/-ян-/-ин- have one Н (серебряный, кожаный), except стеклянный, оловянный, деревянный. Adjectives in -онн-/-енн- and from stems in -н have НН (станционный, длинный).", ru: "Прилагательные с -ан-/-ян-/-ин- пишутся с одной Н (серебряный, кожаный), кроме стеклянный, оловянный, деревянный. С -онн-/-енн- и от основ на -н — НН (станционный, длинный)." },
+          { en: "After ж, ш, ч, щ a final Ь is written in feminine nouns (ночь, мышь) and in verbs (пишешь, режь), but not in masculine nouns (мяч, камыш) or in the genitive plural (много туч).", ru: "После шипящих Ь пишется в существительных женского рода (ночь, мышь) и в глаголах (пишешь, режь), но не пишется в существительных мужского рода (мяч, камыш) и в родительном падеже множественного числа (много туч)." }
+        ],
+        rules: ["ПРЕ- = очень / пере-", "ПРИ- = близко / присоединить / не до конца", "раз- + играть = разыграть", "-ан-, -ян-, -ин- → Н (кроме стеклянный, оловянный, деревянный)"],
+        example: {
+          q: { en: "Which letter goes in the gap: «пр…открыть окно»?", ru: "Какая буква пропущена: «пр…открыть окно»?" },
+          steps: {
+            en: ["Ask what the prefix means here.", "To open a little, not fully: that is the meaning of ПРИ-.", "Answer: приоткрыть."],
+            ru: ["Определите значение приставки.", "Открыть немного, не до конца — это неполнота действия, значение ПРИ-.", "Ответ: приоткрыть."]
+          }
+        },
+        questions: [
+          { kind: "mc", stem: "В каком слове пишется приставка ПРИ-?", opts: ["пр…красный вид", "пр…бежать к дому", "пр…града на пути", "пр…зирать ложь"], ans: 1, rule: { en: "ПРИ- means coming near, joining or doing something partly; ПРЕ- means “very” or is close to ПЕРЕ-.", ru: "ПРИ- обозначает приближение, присоединение, неполноту действия; ПРЕ- — «очень» или близка к ПЕРЕ-." }, why: { en: "Прибежать means to run up to something: approaching, so ПРИ-. Прекрасный means “very beautiful”, and преграда and презирать have ПРЕ- as well.", ru: "Прибежать к дому — приближение, поэтому ПРИ-. Прекрасный — «очень красивый», в словах преграда и презирать тоже пишется ПРЕ-." } },
+          { kind: "mc", stem: "В каком слове на месте пропуска пишется Ы?", opts: ["меж…нститутский", "сверх…нтересный", "раз…грать", "пост…нфарктный"], ans: 2, rule: { en: "After a Russian prefix ending in a consonant, И becomes Ы; after меж-, сверх- and foreign prefixes it stays И.", ru: "После русских приставок на согласный И переходит в Ы; после меж-, сверх- и иноязычных приставок остаётся И." }, why: { en: "раз- is a Russian prefix: разыграть. меж- and сверх- are exceptions, and пост- is a foreign prefix, so they keep И.", ru: "Раз- — русская приставка: разыграть. Меж- и сверх- — исключения, пост- — иноязычная приставка, поэтому в них остаётся И." } },
+          { kind: "mc", stem: "В каком слове пишется одна Н?", opts: ["деревя…ый", "стекля…ый", "оловя…ый", "серебря…ый"], ans: 3, rule: { en: "The suffixes -ан-, -ян-, -ин- have one Н. Three exceptions have НН: стеклянный, оловянный, деревянный.", ru: "Суффиксы -ан-, -ян-, -ин- пишутся с одной Н. Три исключения пишутся с НН: стеклянный, оловянный, деревянный." }, why: { en: "серебряный follows the rule. The other three are the well-known exceptions.", ru: "«Серебряный» пишется по правилу. Остальные три слова — известные исключения." } },
+          { kind: "mc", stem: "В каком слове на конце пишется Ь?", opts: ["ноч…", "мяч…", "камыш…", "много туч…"], ans: 0, rule: { en: "After ж, ш, ч, щ, Ь is written in feminine nouns of the 3rd declension (ночь), but not in masculine nouns (мяч) or the genitive plural (туч).", ru: "После шипящих Ь пишется у существительных женского рода 3-го склонения (ночь), но не пишется у существительных мужского рода (мяч) и в родительном падеже множественного числа (туч)." }, why: { en: "ночь is feminine. мяч and камыш are masculine, and туч is a genitive plural.", ru: "«Ночь» — женского рода. «Мяч» и «камыш» — мужского рода, «туч» — родительный падеж множественного числа." } },
+          { kind: "mc", stem: "В каком слове пропущена безударная гласная Е?", opts: ["м…лчать", "л…сник", "г…ловной", "з…ря"], ans: 1, rule: { en: "To check an unstressed vowel, find a related word where that vowel is stressed.", ru: "Чтобы проверить безударную гласную, подберите однокоренное слово, где эта гласная под ударением." }, why: { en: "лесник is checked by лес. молчать is checked by молча, головной by голову, and заря is checked by зори.", ru: "Лесник — лес. Молчать — молча, головной — голову, заря — зори." } }
+        ]
+      },
+      {
+        id: "gr-ru-punct", only: "ru",
+        title: { en: "Russian: punctuation", ru: "Пунктуация" },
+        blurb: { en: "Commas, dashes and colons in simple and complex sentences.", ru: "Запятые, тире и двоеточие в простом и сложном предложении." },
+        points: [
+          { en: "A form of address is set off with commas: Мама, я дома. Друзья, спасибо вам!", ru: "Обращение выделяется запятыми: Мама, я дома. Друзья, спасибо вам!" },
+          { en: "A participle phrase with an adverbial participle (сделав, читая) is set off with commas: Прочитав книгу, он вернул её.", ru: "Деепричастный оборот выделяется запятыми: Прочитав книгу, он вернул её." },
+          { en: "Before и, а, но joining two complete clauses a comma is needed: Солнце село, и стало прохладно. Before а and но a comma is needed even between single words: холодный, но не сильный.", ru: "Перед и, а, но, соединяющими две грамматические основы, ставится запятая: Солнце село, и стало прохладно. Перед а и но запятая нужна и между однородными членами: холодный, но не сильный." },
+          { en: "A dash goes between subject and predicate when both are nouns and there is no verb: Бишкек — столица Кыргызстана.", ru: "Тире ставится между подлежащим и сказуемым, выраженными существительными, если нет связки: Бишкек — столица Кыргызстана." }
+        ],
+        rules: ["Обращение: , … ,", "Деепричастный оборот: , … ,", "Две основы + и / а / но → запятая", "Сущ. — сущ.: тире"],
+        example: {
+          q: { en: "Where do commas go? «Друзья(1) выйдя из дома(2) мы сразу пошли к реке.»", ru: "Где нужны запятые? «Друзья(1) выйдя из дома(2) мы сразу пошли к реке.»" },
+          steps: {
+            en: ["«Друзья» is a form of address: a comma after it (1).", "«выйдя из дома» is an adverbial participle phrase: commas on both sides (1 and 2).", "Answer: 1 and 2."],
+            ru: ["«Друзья» — обращение: после него запятая (1).", "«Выйдя из дома» — деепричастный оборот: запятые с двух сторон (1 и 2).", "Ответ: 1 и 2."]
+          }
+        },
+        questions: [
+          { kind: "mc", stem: "Где нужна запятая? «Мама(1) я уже пришёл(2) домой.»", opts: ["только 2", "1 и 2", "только 1", "запятые не нужны"], ans: 2, rule: { en: "A form of address (the person you speak to) is set off with commas.", ru: "Обращение (к кому обращаются с речью) выделяется запятыми." }, why: { en: "«Мама» is a form of address at the start, so a comma follows it: Мама, я уже пришёл домой. Nothing is set off at 2.", ru: "«Мама» — обращение в начале предложения, после него запятая: Мама, я уже пришёл домой. На месте 2 ничего не выделяется." } },
+          { kind: "mc", stem: "Где нужна запятая? «Прочитав письмо(1) Азамат(2) улыбнулся.»", opts: ["только 2", "1 и 2", "запятые не нужны", "только 1"], ans: 3, rule: { en: "An adverbial participle phrase (сделав, читая + words) is set off with commas.", ru: "Деепричастный оборот выделяется запятыми." }, why: { en: "«Прочитав письмо» is the phrase; it ends at 1. The subject and verb («Азамат улыбнулся») are not split.", ru: "«Прочитав письмо» — деепричастный оборот, он заканчивается на месте 1. Подлежащее и сказуемое («Азамат улыбнулся») запятой не разделяются." } },
+          { kind: "mc", stem: "Где нужна запятая? «Солнце село(1) и(2) в горах сразу стало холодно.»", opts: ["только 1", "только 2", "1 и 2", "запятые не нужны"], ans: 0, rule: { en: "When и joins two clauses, each with its own subject and predicate, a comma goes before и.", ru: "Если союз «и» соединяет две грамматические основы, перед ним ставится запятая." }, why: { en: "Two clauses: «солнце село» and «стало холодно». The comma goes before и, at 1.", ru: "Две основы: «солнце село» и «стало холодно». Запятая ставится перед «и», на месте 1." } },
+          { kind: "mc", stem: "Какой знак нужен на месте пропуска? «Бишкек ___ столица Кыргызстана.»", opts: ["запятая", "тире", "двоеточие", "знак не нужен"], ans: 1, rule: { en: "Put a dash between a noun subject and a noun predicate when there is no linking verb.", ru: "Между подлежащим и сказуемым, выраженными существительными в именительном падеже, при отсутствии связки ставится тире." }, why: { en: "Both «Бишкек» and «столица» are nouns and there is no verb, so a dash.", ru: "«Бишкек» и «столица» — существительные, связки нет, поэтому ставится тире." } },
+          { kind: "mc", stem: "В каком предложении знаки препинания расставлены правильно?", opts: ["Ветер был, холодный но не сильный.", "Ветер был холодный но, не сильный.", "Ветер был холодный, но не сильный.", "Ветер, был холодный но не сильный."], ans: 2, rule: { en: "A comma always goes before а and но between parts of a sentence.", ru: "Перед противительными союзами «а» и «но» между однородными членами всегда ставится запятая." }, why: { en: "«холодный» and «не сильный» are contrasted with но, so the comma goes before но. The other versions put the comma in the wrong place.", ru: "«Холодный» и «не сильный» противопоставлены союзом «но», запятая стоит перед ним. В остальных вариантах запятая стоит не на месте." } }
+        ]
+      },
+      {
+        id: "gr-ru-lex", only: "ru",
+        title: { en: "Russian: vocabulary and idioms", ru: "Лексика и фразеология" },
+        blurb: { en: "Synonyms, antonyms, idioms, look-alike words and style.", ru: "Синонимы, антонимы, фразеологизмы, паронимы и стиль." },
+        points: [
+          { en: "An idiom (фразеологизм) means something as a whole: «бить баклуши» means “to idle”, «кот наплакал» means “very little”. Replace the whole idiom, not one word.", ru: "Фразеологизм имеет одно значение целиком: «бить баклуши» — бездельничать, «кот наплакал» — очень мало. Заменяют весь оборот, а не одно слово." },
+          { en: "Paronyms look alike but differ in meaning: надеть (on yourself: надеть куртку) and одеть (someone else: одеть ребёнка); эффектный (striking) and эффективный (effective).", ru: "Паронимы похожи по звучанию, но различаются по значению: надеть (на себя: надеть куртку) и одеть (кого-то: одеть ребёнка); эффектный (яркий) и эффективный (действенный)." },
+          { en: "Avoid words that repeat a meaning already there: «свободная вакансия», «памятный сувенир», «вверх» in «подняться вверх».", ru: "Избегайте лишних слов, повторяющих смысл: «свободная вакансия», «памятный сувенир», «подняться вверх»." },
+          { en: "Choose words that fit the style: official papers use neutral words («рассмотрен вопрос»), not everyday ones («вдобавок», «навалом»).", ru: "Выбирайте слова по стилю: в официальном тексте уместны нейтральные слова («рассмотрен вопрос»), а не разговорные («вдобавок», «навалом»)." }
+        ],
+        rules: [],
+        example: {
+          q: { en: "Which idiom means the opposite of «кот наплакал» (very little)?", ru: "Какой фразеологизм противоположен по смыслу выражению «кот наплакал»?" },
+          steps: {
+            en: ["«Кот наплакал» means “very little”.", "The opposite meaning is “a great deal”.", "«Хоть отбавляй» means “more than enough”, so it is the antonym."],
+            ru: ["«Кот наплакал» значит «очень мало».", "Противоположное значение — «очень много».", "«Хоть отбавляй» значит «больше чем нужно» — это и есть антоним."]
+          }
+        },
+        questions: [
+          { kind: "mc", stem: "Какое слово является синонимом слова «смелый»?", opts: ["робкий", "весёлый", "сильный", "отважный"], ans: 3, rule: { en: "Synonyms are words with the same or very close meaning.", ru: "Синонимы — слова с одинаковым или очень близким значением." }, why: { en: "отважный means the same as смелый. робкий is the opposite, and a cheerful or strong person is not necessarily brave.", ru: "«Отважный» значит то же, что «смелый». «Робкий» — антоним, а весёлый или сильный человек не обязательно смелый." } },
+          { kind: "mc", stem: "Какое слово является антонимом слова «щедрый»?", opts: ["скупой", "добрый", "богатый", "честный"], ans: 0, rule: { en: "Antonyms are words with opposite meanings.", ru: "Антонимы — слова с противоположным значением." }, why: { en: "A generous person gives freely; a скупой (stingy) one does not. The other words are not opposites.", ru: "Щедрый охотно отдаёт, скупой — нет. Остальные слова не противоположны по смыслу." } },
+          { kind: "mc", stem: "Что значит выражение «бить баклуши»?", opts: ["много работать", "бездельничать", "драться", "громко спорить"], ans: 1, rule: { en: "An idiom has one meaning as a whole; don't read its words literally.", ru: "Фразеологизм имеет одно общее значение, его слова не понимают буквально." }, why: { en: "«Бить баклуши» means to idle. «Драться» is the literal trap from the word «бить».", ru: "«Бить баклуши» — бездельничать. «Драться» — ловушка от буквального значения слова «бить»." } },
+          { kind: "mc", stem: "Выберите правильный вариант: «На улице холодно, ___ тёплую куртку».", opts: ["одень", "надевай себя", "надень", "одевай"], ans: 2, rule: { en: "надеть is putting something on (yourself): надеть куртку. одеть is dressing someone: одеть ребёнка.", ru: "«Надеть» — что-то на себя: надеть куртку. «Одеть» — кого-то: одеть ребёнка." }, why: { en: "The jacket is put on, so надень. «одень куртку» is a common mistake.", ru: "Куртку надевают, поэтому «надень». «Одень куртку» — частая ошибка." } },
+          { kind: "mc", stem: "В каком сочетании есть лишнее слово?", opts: ["новая книга", "высокая гора", "тёплый день", "свободная вакансия"], ans: 3, rule: { en: "Don't add a word whose meaning is already in the other word.", ru: "Не добавляйте слово, значение которого уже есть в другом слове." }, why: { en: "A вакансия is already a free post, so «свободная» repeats it. The other phrases are normal.", ru: "«Вакансия» — это и есть свободное место, слово «свободная» повторяет смысл. Остальные сочетания правильные." } }
+        ]
+      },
+      {
         id: "gr-ky-harmony", only: "ky",
         title: { en: "Kyrgyz: endings and vowel harmony", ky: "Мүчөлөр жана үндөштүк" },
         blurb: { en: "Choosing the right form of an ending: -лар, -лер, -дар, -тар and the rest.", ky: "Мүчөнүн туура вариантын тандоо: -лар, -лер, -дар, -тар ж.б." },
@@ -157,6 +235,86 @@ SUBJECTS.push(
           { kind: "mc", stem: "Мен азыр китеп ___.", opts: ["окуп жатам", "окуп жатасың", "окуду", "окушту"], ans: 0, rule: { en: "Happening now: verb + -п жат- + person ending: мен окуп жатам, сен окуп жатасың, ал окуп жатат.", ky: "Азыр болуп жаткан иш: этиш + -п жат- + жак мүчө: мен окуп жатам, сен окуп жатасың, ал окуп жатат." }, why: { en: "азыр (now) with мен: окуп жатам.", ky: "«Азыр» жана «мен»: окуп жатам." } },
           { kind: "mc", stem: "Силер сабакка эмне үчүн ___?", opts: ["кечиктиң", "кечиктиңер", "кечикти", "кечиктим"], ans: 1, rule: { en: "силер (you, plural) takes -ңар/-ңер/-ңор/-ңөр in the past tense: кечиктиңер, бардыңар.", ky: "«Силер» өткөн чакта -ңар/-ңер/-ңор/-ңөр мүчөсүн алат: кечиктиңер, бардыңар." }, why: { en: "силер (you, plural) takes -ңар/-ңер: кечиктиңер.", ky: "«Силер» -ңар/-ңер мүчөсүн талап кылат: кечиктиңер." } },
           { kind: "mc", stem: "Кайсы сүйлөмдө ката бар?", opts: ["Биз кечээ футбол ойнодук.", "Ал эртең келет.", "Мен кечээ дүкөнгө барам.", "Сен ырдайсыңбы?"], ans: 2, rule: { en: "Time words fix the tense: кечээ (yesterday) needs the past, эртең (tomorrow) the future, азыр (now) the present.", ky: "Убакыт сөздөрү чакты аныктайт: «кечээ» өткөн чакты, «эртең» келер чакты, «азыр» учур чакты талап кылат." }, why: { en: "кечээ (yesterday) needs the past tense: мен кечээ дүкөнгө бардым.", ky: "«Кечээ» өткөн чакты талап кылат: мен кечээ дүкөнгө бардым." } }
+        ]
+      },
+      {
+        id: "gr-ky-spell", only: "ky",
+        title: { en: "Kyrgyz: spelling rules", ky: "Жазылыш эрежелери" },
+        blurb: { en: "Hyphens, capital letters and dividing words by syllables.", ky: "Сызыкча, баш тамга жана сөздү муунга бөлүп ташымалдоо." },
+        points: [
+          { en: "Pair words are written with a hyphen: ата-эне, бала-чака, ой-пикир, and so are approximate numbers: эки-үч, беш-алты.", ky: "Жуп сөздөр сызыкча менен жазылат: ата-эне, бала-чака, ой-пикир. Чамалап айтылган сандар да ушундай: эки-үч, беш-алты." },
+          { en: "Compound place names are written with a hyphen and every part takes a capital: Ысык-Көл, Жалал-Абад, Чолпон-Ата.", ky: "Татаал жер-суу аттары сызыкча менен жазылып, ар бир бөлүгү баш тамга менен башталат: Ысык-Көл, Жалал-Абад, Чолпон-Ата." },
+          { en: "Compound nouns that name one thing but keep two separate words are written apart: темир жол, кол чатыр, аш болок.", ky: "Бир нерсени билдирген, бирок эки сөздөн турган татаал сөздөр бөлөк жазылат: темир жол, кол чатыр." },
+          { en: "An ordinal number written in figures takes a hyphen instead of -ынчы: 5-класс, 9-Май, 2026-жыл.", ky: "Иреттик сан атооч цифра менен жазылганда, -ынчы мүчөсүнүн ордуна сызыкча коюлат: 5-класс, 9-Май, 2026-жыл." },
+          { en: "Words are carried to the next line by syllables, and one letter is never left alone: мек-теп, ки-теп-ка-на.", ky: "Сөз кийинки сапка муун боюнча ташымалданат, бир тамга жалгыз калтырылбайт: мек-теп, ки-теп-ка-на." }
+        ],
+        rules: ["жуп сөз: ата-эне", "Ысык-Көл, Жалал-Абад", "темир жол (бөлөк)", "5-класс, 9-Май"],
+        example: {
+          q: { en: "How is «Чолпон ата» (the town) written?", ky: "«Чолпон ата» (шаар) кантип жазылат?" },
+          steps: {
+            en: ["It is a compound place name.", "Compound place names take a hyphen, and each part a capital.", "Answer: Чолпон-Ата."],
+            ky: ["Бул — татаал жер-суу аты.", "Мындай аттар сызыкча менен жазылып, ар бир бөлүгү баш тамга менен башталат.", "Жооп: Чолпон-Ата."]
+          }
+        },
+        questions: [
+          { kind: "mc", stem: "Кайсы сөз туура жазылган?", opts: ["ата-эне", "атаэне", "ата эне", "атаа-эне"], ans: 0, rule: { en: "Pair words (two words joined into one idea) are written with a hyphen.", ky: "Жуп сөздөр (эки сөз бир түшүнүктү билдирет) сызыкча менен жазылат." }, why: { en: "ата-эне is a pair word, so it takes a hyphen. The other spellings drop the hyphen or change the word.", ky: "«Ата-эне» — жуп сөз, ошондуктан сызыкча менен жазылат. Калган варианттарда сызыкча жок же сөз бузулган." } },
+          { kind: "mc", stem: "Көлдүн аты кайсы вариантта туура жазылган?", opts: ["ысык-көл", "Ысык-Көл", "Ысык-көл", "Ысык көл"], ans: 1, rule: { en: "Compound place names take a hyphen, and every part starts with a capital letter.", ky: "Татаал жер-суу аттары сызыкча менен жазылат, ар бир бөлүгү баш тамга менен башталат." }, why: { en: "Both parts are capitalised and joined by a hyphen: Ысык-Көл.", ky: "Эки бөлүгү тең баш тамга менен, сызыкча аркылуу жазылат: Ысык-Көл." } },
+          { kind: "mc", stem: "Кайсы сөз муунга туура бөлүнүп ташымалданган?", opts: ["ме-ктеп", "мект-еп", "мек-теп", "м-ектеп"], ans: 2, rule: { en: "Words are divided by syllables; two consonants side by side go to different syllables.", ky: "Сөз муун боюнча бөлүнөт; катар келген эки үнсүз ар башка муунга бөлүнөт." }, why: { en: "мектеп has two syllables: мек-теп. A single letter cannot be left on a line.", ky: "«Мектеп» эки муундан турат: мек-теп. Бир тамга сапта жалгыз калбайт." } },
+          { kind: "mc", stem: "Кайсы вариант туура жазылган?", opts: ["5-чи класс", "5 класс", "5-нчи-класс", "5-класс"], ans: 3, rule: { en: "An ordinal number in figures takes a hyphen instead of the ending -ынчы: 5-класс.", ky: "Иреттик сан цифра менен жазылганда -ынчы мүчөсүнүн ордуна сызыкча коюлат: 5-класс." }, why: { en: "In figures the ending is replaced by a hyphen: 5-класс. Writing the ending as well is a mistake.", ky: "Цифра менен жазганда мүчө сызыкча менен алмашат: 5-класс. Мүчөнү кошо жазуу ката." } },
+          { kind: "mc", stem: "Кайсы сөз сызыкча менен жазылат?", opts: ["эки(…)үч", "темир(…)жол", "кол(…)чатыр", "кара(…)көз"], ans: 0, rule: { en: "Approximate numbers (эки-үч, беш-алты) take a hyphen; compound nouns like темир жол are written apart.", ky: "Чамалап айтылган сандар (эки-үч, беш-алты) сызыкча менен, «темир жол» сыяктуу татаал сөздөр бөлөк жазылат." }, why: { en: "эки-үч means “two or three”: a hyphen. темир жол and кол чатыр are written apart, and кара көз is a plain phrase.", ky: "«Эки-үч» — чамалап айтылган сан, сызыкча менен жазылат. «Темир жол», «кол чатыр» бөлөк жазылат, «кара көз» — жөнөкөй сөз айкашы." } }
+        ]
+      },
+      {
+        id: "gr-ky-punct", only: "ky",
+        title: { en: "Kyrgyz: punctuation", ky: "Тыныш белгилери" },
+        blurb: { en: "Commas, dashes, colons and quotation marks.", ky: "Үтүр, сызыкча, кош чекит жана тырмакча." },
+        points: [
+          { en: "A form of address is set off with commas: Айгүл, бери кел. Жээн бала, сага айтам.", ky: "Кайрылуу үтүр менен бөлүнөт: Айгүл, бери кел. Жээн бала, сага айтам." },
+          { en: "Parenthetical words are set off with commas: Албетте, биз жеңебиз. Менимче, бул туура.", ky: "Кыстарма сөздөр үтүр менен бөлүнөт: Албетте, биз жеңебиз. Менимче, бул туура." },
+          { en: "A dash goes between subject and predicate when both are nouns: Китеп — билим булагы.", ky: "Ээ менен баяндооч зат атооч болгондо ортосуна сызыкча коюлат: Китеп — билим булагы." },
+          { en: "Words in a list are separated by commas, and a colon comes after a summarising word before the list: Дүкөндөн баарын алдым: нан, сүт, май.", ky: "Бир өңчөй мүчөлөр үтүр менен бөлүнөт, жалпылоочу сөздөн кийин кош чекит коюлат: Дүкөндөн баарын алдым: нан, сүт, май." },
+          { en: "Direct speech goes in «»: «Эртең келем», — деди ал.", ky: "Төл сөз тырмакчага алынат: «Эртең келем», — деди ал." }
+        ],
+        rules: ["Кайрылуу: , ", "Кыстарма сөз: Албетте, …", "Зат атооч — зат атооч", "Жалпылоочу сөз: …"],
+        example: {
+          q: { en: "Punctuate: «Балдар албетте эртең экскурсияга барабыз»", ky: "Тыныш белгисин коюңуз: «Балдар албетте эртең экскурсияга барабыз»" },
+          steps: {
+            en: ["«Балдар» is the people spoken to: a form of address, so a comma after it.", "«албетте» is a parenthetical word: commas on both sides.", "Балдар, албетте, эртең экскурсияга барабыз."],
+            ky: ["«Балдар» — кайрылуу, андан кийин үтүр коюлат.", "«Албетте» — кыстарма сөз, эки жагынан үтүр менен бөлүнөт.", "Балдар, албетте, эртең экскурсияга барабыз."]
+          }
+        },
+        questions: [
+          { kind: "mc", stem: "Тыныш белгилери кайсы вариантта туура коюлган?", opts: ["Айгүл бери, кел.", "Айгүл, бери кел.", "Айгүл: бери кел.", "Айгүл — бери, кел."], ans: 1, rule: { en: "A form of address (the person spoken to) is set off with a comma.", ky: "Кайрылуу (сөз кимге арналса) үтүр менен бөлүнөт." }, why: { en: "«Айгүл» is the form of address, so the comma comes right after it.", ky: "«Айгүл» — кайрылуу, ошондуктан андан кийин дароо үтүр коюлат." } },
+          { kind: "mc", stem: "Кайсы сүйлөмгө сызыкча (тире) коюлушу керек?", opts: ["Китеп ___ столдо жатат.", "Мен ___ китеп окудум.", "Китеп ___ билим булагы.", "Ал ___ жакшы окуйт."], ans: 2, rule: { en: "Put a dash between subject and predicate when both are nouns.", ky: "Ээ жана баяндооч зат атооч менен берилгенде ортосуна сызыкча коюлат." }, why: { en: "«Китеп» and «булагы» are both nouns: Китеп — билим булагы. The other sentences have a verb as the predicate.", ky: "«Китеп» жана «булагы» — зат атоочтор: Китеп — билим булагы. Калган сүйлөмдөрдө баяндооч этиш." } },
+          { kind: "mc", stem: "Кайсы вариантта кыстарма сөз туура бөлүнгөн?", opts: ["Албетте биз, жеңебиз.", "Албетте биз жеңебиз,.", "Албетте: биз жеңебиз.", "Албетте, биз жеңебиз."], ans: 3, rule: { en: "Parenthetical words (албетте, менимче, балким) are set off with commas.", ky: "Кыстарма сөздөр (албетте, менимче, балким) үтүр менен бөлүнөт." }, why: { en: "«Албетте» is parenthetical, so it is followed by a comma.", ky: "«Албетте» — кыстарма сөз, андан кийин үтүр коюлат." } },
+          { kind: "mc", stem: "Кайсы вариантта тыныш белгилери туура коюлган?", opts: ["Дүкөндөн нан, сүт, май алдым.", "Дүкөндөн нан сүт, май алдым.", "Дүкөндөн, нан, сүт, май алдым.", "Дүкөндөн нан, сүт, май, алдым."], ans: 0, rule: { en: "Words of the same kind in a list are separated by commas; no comma before the first or after the last.", ky: "Бир өңчөй мүчөлөр үтүр менен бөлүнөт; биринчисинин алдына жана акыркысынан кийин үтүр коюлбайт." }, why: { en: "нан, сүт, май are the list: commas only between them.", ky: "«Нан, сүт, май» — бир өңчөй мүчөлөр, үтүр алардын ортосунда гана коюлат." } },
+          { kind: "mc", stem: "Төл сөз кайсы вариантта туура берилген?", opts: ["Эртең келем, деди ал.", "«Эртең келем», — деди ал.", "«Эртең келем» деди ал.", "«Эртең келем, — деди ал»."], ans: 1, rule: { en: "Direct speech goes in «». If the author's words follow, put a comma and a dash after the closing quote.", ky: "Төл сөз тырмакчага алынат. Андан кийин автордун сөзү келсе, тырмакчадан кийин үтүр жана сызыкча коюлат." }, why: { en: "The words spoken are in «», then a comma and a dash before «деди ал».", ky: "Айтылган сөз тырмакчада, андан кийин «деди ал» алдында үтүр жана сызыкча." } }
+        ]
+      },
+      {
+        id: "gr-ky-lex", only: "ky",
+        title: { en: "Kyrgyz: vocabulary, idioms and style", ky: "Лексика, фразеология жана стиль" },
+        blurb: { en: "Synonyms, antonyms, idioms, figurative meaning and styles.", ky: "Синоним, антоним, фразеологизм, өтмө маани жана стилдер." },
+        points: [
+          { en: "A word can have a literal (тике) and a figurative (өтмө) meaning: таш жатат (literal), жүрөгү таш (figurative: hard-hearted).", ky: "Сөздүн тике жана өтмө мааниси болот: жолдо таш жатат (тике), жүрөгү таш (өтмө: катаал)." },
+          { en: "An idiom (фразеологизм) has one meaning as a whole: колу ачык (generous), тилин тишине катуу (to keep quiet).", ky: "Фразеологизмдин мааниси бүтүндөй алынат: колу ачык (берешен), тилин тишине катуу (унчукпоо)." },
+          { en: "Synonyms are close in meaning (кайраттуу, эр жүрөк); antonyms are opposite (эски, жаңы).", ky: "Синонимдердин мааниси жакын (кайраттуу, эр жүрөк), антонимдердики карама-каршы (эски, жаңы)." },
+          { en: "Styles: official (арыз, буйрук), scientific (терминдер, аныктама), journalistic (гезит, чакырык), literary (сүрөттөө, образ).", ky: "Стилдер: официалдуу-иштиктүү (арыз, буйрук), илимий (термин, аныктама), публицистикалык (гезит, чакырык), көркөм (сүрөттөө, образ)." }
+        ],
+        rules: [],
+        example: {
+          q: { en: "In «Анын колу ачык», what does «колу ачык» mean?", ky: "«Анын колу ачык» деген сүйлөмдө «колу ачык» эмнени билдирет?" },
+          steps: {
+            en: ["This is an idiom, so its words are not taken literally.", "It describes someone who gives easily.", "It means берешен (generous)."],
+            ky: ["Бул — фразеологизм, сөздөрү түз маанисинде алынбайт.", "Ал оңой эле бөлүшкөн адамды сүрөттөйт.", "Мааниси — берешен."]
+          }
+        },
+        questions: [
+          { kind: "mc", stem: "«Кайраттуу» сөзүнүн синоними кайсы?", opts: ["коркок", "шайыр", "эр жүрөк", "акылдуу"], ans: 2, rule: { en: "Synonyms are words with the same or very close meaning.", ky: "Синонимдер — мааниси бирдей же өтө жакын сөздөр." }, why: { en: "эр жүрөк means the same as кайраттуу. коркок is the opposite.", ky: "«Эр жүрөк» менен «кайраттуу» маанилеш. «Коркок» — карама-каршы маанидеги сөз." } },
+          { kind: "mc", stem: "«Эски» сөзүнүн антоними кайсы?", opts: ["байыркы", "чоң", "кымбат", "жаңы"], ans: 3, rule: { en: "Antonyms are words with opposite meanings.", ky: "Антонимдер — мааниси карама-каршы сөздөр." }, why: { en: "жаңы is the opposite of эски. байыркы is close in meaning (a synonym).", ky: "«Жаңы» — «эски» сөзүнүн карама-каршысы. «Байыркы» маанилеш сөз." } },
+          { kind: "mc", stem: "«Колу ачык» фразеологизминин мааниси кайсы?", opts: ["берешен", "чебер", "күчтүү", "эмгекчил"], ans: 0, rule: { en: "An idiom's meaning is taken as a whole, not word by word.", ky: "Фразеологизмдин мааниси сөзмө-сөз эмес, бүтүндөй алынат." }, why: { en: "колу ачык describes someone who gives easily: берешен.", ky: "«Колу ачык» — оңой бөлүшкөн, берешен адам." } },
+          { kind: "mc", stem: "Кайсы сүйлөмдө «таш» сөзү өтмө маанисинде колдонулган?", opts: ["Жолдо чоң таш жатат.", "Анын жүрөгү таш экен.", "Үйдү таштан курушту.", "Бала сууга таш ыргытты."], ans: 1, rule: { en: "A figurative meaning transfers a feature of a thing to something else.", ky: "Өтмө маанисинде сөз бир нерсенин белгисин башка нерсеге которуп айтат." }, why: { en: "A heart is not made of stone: «жүрөгү таш» means hard-hearted. In the others таш is a real stone.", ky: "Жүрөк таштан эмес: «жүрөгү таш» — катаал деген маани. Калган сүйлөмдөрдө таш — чыныгы таш." } },
+          { kind: "mc", stem: "Арыз, буйрук, протокол кайсы стилге кирет?", opts: ["Көркөм стиль", "Илимий стиль", "Официалдуу-иштиктүү стиль", "Публицистикалык стиль"], ans: 2, rule: { en: "Official documents (арыз, буйрук, протокол, келишим) belong to the official style.", ky: "Иш кагаздары (арыз, буйрук, протокол, келишим) официалдуу-иштиктүү стилге кирет." }, why: { en: "These are official papers, so the official style.", ky: "Булар — иш кагаздары, ошондуктан официалдуу-иштиктүү стиль." } }
         ]
       }
     ]
