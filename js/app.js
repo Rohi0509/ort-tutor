@@ -210,7 +210,13 @@ function viewGuide() {
   return `${crumbs([{ label: T().tabToday, act: "home" }])}
     <div class="head"><div class="eyebrow">📋 ОРТ · ЖРТ</div><h1>${esc(T().guideTitle)}</h1><p class="lede">${esc(T().guideLede)}</p></div>
     ${GUIDE.map(g => guideSection(g, false)).join("")}
+    ${officialCard()}
     <p class="small">${tx(GUIDE_SOURCE)}</p>`;
+}
+// ЦООМО's own free online practice tests. Links to the list, not to single tests: their ids change between years.
+const OFFICIAL_TESTS = "https://testing.kg/tests";
+function officialCard() {
+  return `<a class="card official" href="${OFFICIAL_TESTS}" target="_blank" rel="noopener"><span class="tag">🌐 ${esc(T().officialTag)}</span><p>${esc(T().officialSub)}</p><span class="more">${esc(T().officialGo)}</span></a>`;
 }
 
 function viewSubjects() {
@@ -239,7 +245,8 @@ function viewSubject(sub) {
     <div class="cards2">
       <button type="button" class="card" data-act="mixed" data-arg="${sub.id}"><span class="tag">🎲 ${esc(T().mixed)}</span><p>${esc(T().mixedSub)}</p>${mb !== undefined ? `<span class="more">${esc(T().best)}: ${mb}%</span>` : ""}</button>
       <button type="button" class="card timed" data-act="${timedLocked(sub) ? "upgrade" : "timed"}" data-arg="${sub.id}"><span class="tag">${timedLocked(sub) ? "🔒" : "⏱"} ${esc(T().timed)}</span><p>${esc(T().timedSub(TIMED_N, timedMins(sub)))}</p>${tb !== undefined ? `<span class="more">${esc(T().best)}: ${tb}%</span>` : ""}</button>
-    </div>`;
+    </div>
+    ${officialCard()}`;
 }
 
 function viewTrophies() {

@@ -101,6 +101,8 @@ button.card:active { transform: translateY(1px); }
 .card.next { border: 2px solid var(--accent); }
 .card.level { background: linear-gradient(135deg, var(--surface) 55%, color-mix(in srgb, var(--hi) 35%, var(--surface))); border: 2px solid var(--ink); }
 .card.timed { border: 2px dashed var(--gold); }
+a.card { text-decoration: none; }
+.card.official { margin-top: 12px; }
 .card.timed .tag { color: var(--gold); }
 .row2 { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .lvtag { display: inline-block; background: var(--hi); color: var(--hi-ink); font: 800 .75rem var(--f-body); letter-spacing: .06em; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; }

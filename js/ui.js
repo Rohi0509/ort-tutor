@@ -298,11 +298,14 @@ UI.ky.err.badLink = "Шилтеме иштеген жок: мөөнөтү бүт
 
 /* The "How the ORT works" guide (content in guide.js). */
 Object.assign(UI.en, { guideTitle: "How the ORT works", guideLede: "What each part of the test asks of you, the time you get, the rules on the day and how to fill in the answer sheet.",
-  guideCard: "Sections, timing, rules and the answer sheet: know what to expect.", onOrt: "On the ORT", tipsL: "Tips", allAbout: "All about the test →", paceNote: "at the real ORT pace" });
+  guideCard: "Sections, timing, rules and the answer sheet: know what to expect.", onOrt: "On the ORT", tipsL: "Tips", allAbout: "All about the test →", paceNote: "at the real ORT pace",
+  officialTag: "Official practice test", officialSub: "Free online tests from ЦООМО, who run the ORT, on their site testing.kg. Same format and timing as the real test. Opens in a new tab.", officialGo: "testing.kg ↗" });
 Object.assign(UI.ru, { guideTitle: "Как устроен ОРТ", guideLede: "Что требуется в каждой части теста, сколько даётся времени, правила в день теста и как заполнять лист ответов.",
-  guideCard: "Разделы, время, правила и лист ответов: знайте заранее, что вас ждёт.", onOrt: "На ОРТ", tipsL: "Советы", allAbout: "Всё о тесте →", paceNote: "в темпе настоящего ОРТ" });
+  guideCard: "Разделы, время, правила и лист ответов: знайте заранее, что вас ждёт.", onOrt: "На ОРТ", tipsL: "Советы", allAbout: "Всё о тесте →", paceNote: "в темпе настоящего ОРТ",
+  officialTag: "Официальный пробный тест", officialSub: "Бесплатные онлайн-тесты ЦООМО, который проводит ОРТ, на сайте testing.kg. Тот же формат и время, что на настоящем тесте. Откроется в новой вкладке.", officialGo: "testing.kg ↗" });
 Object.assign(UI.ky, { guideTitle: "ЖРТ кандай түзүлгөн", guideLede: "Тесттин ар бир бөлүгүндө эмне талап кылынат, канча убакыт берилет, тест күнүндөгү эрежелер жана жооп баракчасын кантип толтуруу керек.",
-  guideCard: "Бөлүмдөр, убакыт, эрежелер жана жооп баракчасы: эмне күтүп турганын алдын ала билиңиз.", onOrt: "ЖРТда", tipsL: "Кеңештер", allAbout: "Тест жөнүндө баары →", paceNote: "чыныгы ЖРТнын темпинде" });
+  guideCard: "Бөлүмдөр, убакыт, эрежелер жана жооп баракчасы: эмне күтүп турганын алдын ала билиңиз.", onOrt: "ЖРТда", tipsL: "Кеңештер", allAbout: "Тест жөнүндө баары →", paceNote: "чыныгы ЖРТнын темпинде",
+  officialTag: "Расмий сыноо тести", officialSub: "ЖРТны өткөргөн ЦООМОнун testing.kg сайтындагы акысыз онлайн тесттер. Формасы жана убактысы чыныгы тесттегидей. Жаңы өтмөктө ачылат.", officialGo: "testing.kg ↗" });
 
 /* Plans (free / full access) and practice levels. */
 Object.assign(UI.en, {
