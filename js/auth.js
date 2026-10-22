@@ -72,6 +72,17 @@ const Cloud = (() => {
   C.resetPassword = async email => { must(await sb.auth.resetPasswordForEmail(email, { redirectTo: here() })); };
   C.updatePassword = async password => { must(await sb.auth.updateUser({ password })); };
 
+  // Email links. The Supabase email templates send ?token_hash=…&type=recovery|email (see CLAUDE.md), which works
+  // on any device. The default PKCE link (?code=…) only works in the browser that asked for it, so a reset opened
+  // on a phone or in the Gmail app used to land silently on the login page.
+  C.authLink = () => {
+    const q = new URLSearchParams(loc.search || ""), h = new URLSearchParams((loc.hash || "").replace(/^#/, ""));
+    return { token: q.get("token_hash"), type: q.get("type"), err: q.get("error_description") || h.get("error_description"), hadCode: q.has("code") };
+  };
+  C.verifyLink = async (token_hash, type) => { must(await sb.auth.verifyOtp({ token_hash, type })); };
+  // Removes the token from the address bar so a reload or a shared screenshot doesn't reuse it.
+  C.clearLink = () => { try { history.replaceState(null, "", loc.pathname); } catch (e) {} };
+
   /* ---------- profile ---------- */
   C.loadProfile = async user => {
     try {

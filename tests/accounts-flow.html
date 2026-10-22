@@ -96,6 +96,11 @@ const mock = {
     },
     async signOut() { current = null; setTimeout(() => fire("SIGNED_OUT"), 0); return { error: null }; },
     async resetPasswordForEmail() { return ok_({}); },
+    // Email-link tokens: "good-token" belongs to the first user; anything else has expired.
+    async verifyOtp({ token_hash }) {
+      if (token_hash !== "good-token") return err("Token has expired or is invalid");
+      current = DB.users[0]; setTimeout(() => fire("SIGNED_IN"), 0); return ok_({ session: {} });
+    },
     async updateUser({ password }) { current.password = password; return ok_({}); }
   },
   from: query,
@@ -313,6 +318,14 @@ async function logOut() { click('#tabbar [data-tab="settings"]:not([hidden])'); 
     ok(!PAID.byTopic.compare && asked.questions.length === 0 && !$('.lvl[data-arg="compare|2"]'), "free student receives no paid questions, even when asking the database");
     document.querySelector('.topbar [data-lang="en"]').click();
     await logOut(); await logIn("kid@test.com", "secret123");
+
+    // Password reset link opened on another device: a one-time token, not tied to the browser that asked
+    handleAuthLink({ token: "good-token", type: "recovery" }); await wait(200);
+    ok(view.name === "newpw", "reset link opens 'choose a new password'");
+    fill("password", "brandnew123"); submit(); await wait(200);
+    ok(DB.users[0].password === "brandnew123" && view.name === "home" && /Password changed/.test(flashText()), "new password saved, back to the app");
+    handleAuthLink({ token: "old-token", type: "recovery" }); await wait(200);
+    ok(/didn't work/.test(flashText()) && view.name === "home" && !recovering, "an expired or used link says so instead of failing silently");
 
     // Russian interface
     click('#tabbar [data-tab="trophies"]'); document.querySelector('.topbar [data-lang="ru"]').click();

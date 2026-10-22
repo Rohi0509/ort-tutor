@@ -592,8 +592,26 @@ function summaryText(c) {
   return lines.join("\n");
 }
 
+// An email link (password reset, or confirming a new account) opens the app with a one-time token.
+let linkPending = false, badLinkHint = false;
+function handleAuthLink(link) {
+  if (!link.token) { badLinkHint = !!(link.err || link.hadCode); return; }  // an old-style link that may fail
+  linkPending = true;
+  if (link.type === "recovery") { recovering = true; go({ name: "newpw" }); }
+  Cloud.verifyLink(link.token, link.type === "recovery" ? "recovery" : "email").then(() => {
+    linkPending = false; Cloud.clearLink();
+    if (!recovering) render();
+  }, () => {
+    linkPending = false; recovering = false; Cloud.clearLink();
+    flash = { kind: "err", msg: () => T().err.badLink };
+    go({ name: me ? (me.role === "parent" ? "parent" : "home") : "login" }, true);
+  });
+}
+
 async function onAuth(event, session) {
   if (event === "PASSWORD_RECOVERY") { recovering = true; go({ name: "newpw" }); }
+  if (!session && linkPending) { render(); return; }  // still checking an email link: stay on its page
+  if (!session && badLinkHint) { badLinkHint = false; flash = { kind: "err", msg: () => T().err.badLink }; }
   if (!session) {
     me = null; children = null; recovering = false; STORE = "ort-tutor-v1";
     usePaid(null, saved.lang);
@@ -928,4 +946,4 @@ document.querySelectorAll(".topbar .seg button").forEach(b => b.addEventListener
 }));
 
 render();
-if (Cloud.enabled) Cloud.start(onAuth);
+if (Cloud.enabled) { Cloud.start(onAuth); handleAuthLink(Cloud.authLink()); }

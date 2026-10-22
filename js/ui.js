@@ -291,7 +291,10 @@ Object.assign(UI.ky.err, {
   noAccess: "Кирүү мөөнөтү бүттү. «Аккаунт» барагында жаңы кирүү кодун кошуңуз."
 });
 UI.ky.sync.noAccess = "Кирүү мөөнөтү бүттү, ошондуктан жаңы прогресс сакталбай жатат. Төмөндө код кошуңуз.";
-for (const l of ["en", "ru", "ky"]) delete UI[l].err.groupCode;  // the shared group code is gone
+for (const l of ["en", "ru", "ky"]) delete UI[l].err.groupCode;
+UI.en.err.badLink = "This link didn't work: it has expired or was already used. Ask for a new one.";
+UI.ru.err.badLink = "Ссылка не сработала: срок её действия истёк или она уже использована. Запросите новую.";
+UI.ky.err.badLink = "Шилтеме иштеген жок: мөөнөтү бүткөн же мурда колдонулган. Жаңысын сураңыз.";  // the shared group code is gone
 
 /* The "How the ORT works" guide (content in guide.js). */
 Object.assign(UI.en, { guideTitle: "How the ORT works", guideLede: "What each part of the test asks of you, the time you get, the rules on the day and how to fill in the answer sheet.",
