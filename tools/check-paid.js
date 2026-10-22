@@ -7,7 +7,7 @@ const root = path.join(__dirname, "..");
 
 // Load the subjects and the format rules the same way the app does.
 const SUBJECTS = [];
-eval(["js/subjects.js", ...fs.readFileSync(path.join(root, "index.html"), "utf8").match(/js\/data\/[\w-]+\.js/g), "js/paidformat.js"]
+eval(["js/subjects.js", ...fs.readFileSync(path.join(root, "index.html"), "utf8").match(/js\/data\/[\w-]+\.js/g), "js/figures.js", "js/paidformat.js"]
   .map(f => fs.readFileSync(path.join(root, f), "utf8")).join("\n").replace("const SUBJECTS = [];", ""));
 
 const dir = path.join(root, "paid-content");

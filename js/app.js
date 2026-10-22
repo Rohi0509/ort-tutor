@@ -41,6 +41,7 @@ const fmt = s => L() === "en" ? s : String(s).replace(/(\d)\.(\d)/g, "$1,$2");
 const pick = v => isObj(v) ? v[L()] : fmt(v);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const tx = v => esc(pick(v));
+figText = v => pick(v);  // figure labels follow the interface language (figures.js)
 const isTextual = s => /[A-Za-zА-Яа-яЁёҢңӨөҮү]{3,}/.test(s);
 const subject = id => SUBJECTS.find(s => s.id === id);
 // Grammar topics marked only: "ru" / "ky" show in that language and in English.
@@ -262,7 +263,7 @@ function legend() { return `<ul class="legend">${CMP_OPTS[L()].map((o, i) => `<l
 
 function viewLesson(sub, t) {
   const ex = t.example;
-  const exBody = ex.a !== undefined ? `<p>${tx(ex.q)}</p>${cmpBox(ex.a, ex.b)}` : `<p>${tx(ex.q)}</p>`;
+  const exBody = figHtml(ex.fig) + (ex.a !== undefined ? `<p>${tx(ex.q)}</p>${cmpBox(ex.a, ex.b)}` : `<p>${tx(ex.q)}</p>`);
   const steps = ex.steps[L()].map(s => `<li>${esc(s)}</li>`).join("");
   const rules = t.rules.length ? `<div class="rules"><h3>${esc(T().rules)}</h3><ul>${t.rules.map(r => `<li>${tx(r)}</li>`).join("")}</ul></div>` : "";
   const leg = t.showLegend ? `<div class="rules"><h3>${esc(T().legend)}</h3>${legend()}</div>` : "";
@@ -285,9 +286,10 @@ function levelButton(t, lv) {
   return `<button type="button" class="lvl${b >= 80 ? " done" : ""}" data-act="start" data-arg="${t.id}|${lv}"><span class="ic">${b >= 80 ? "⭐" : "▶"}</span>${name}<small>${b === undefined ? esc(T().qCount(n)) : `${esc(T().best)}: ${b}%`}</small></button>`;
 }
 
+// The figure (if any) comes first, as on the printed ORT, then the condition and columns or the question.
 function questionBody(q) {
-  if (q.kind === "cmp") return `${q.cond ? `<p class="cond">${tx(q.cond)}</p>` : ""}${cmpBox(q.a, q.b)}`;
-  return `<p class="stem">${tx(q.stem)}</p>`;
+  if (q.kind === "cmp") return `${figHtml(q.fig)}${q.cond ? `<p class="cond">${tx(q.cond)}</p>` : ""}${cmpBox(q.a, q.b)}`;
+  return `${figHtml(q.fig)}<p class="stem">${tx(q.stem)}</p>`;
 }
 // The reading text for a question: its own passage (paid levels) or the topic's.
 function passageHtml(q, topic) {

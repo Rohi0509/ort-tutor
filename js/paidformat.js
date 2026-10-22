@@ -12,7 +12,8 @@
      ]
    }
    Text is plain strings in the question's own language (Kyrgyz and Russian sets are written separately).
-   Maths multiple choice has 5 options; comparisons and every other section have 4. */
+   Maths multiple choice has 5 options; comparisons and every other section have 4.
+   A maths question may add "fig" (a number line, geometry figure, coordinate plane or table): see js/figures.js. */
 function validatePaid(bundle, subjects) {
   const errs = [];
   const subjectOf = {};
@@ -50,6 +51,7 @@ function validatePaid(bundle, subjects) {
       if (!Number.isInteger(q.ans) || q.ans < 0 || q.ans >= need) errs.push(`${where}: "ans" must be 0–${need - 1}`);
     } else errs.push(`${where}: "kind" must be "mc" or "cmp"`);
     if (q.passage !== undefined && !passageIds.has(q.passage)) errs.push(`${where}: passage "${q.passage}" is not in this file`);
+    if (q.fig !== undefined) for (const e of validateFig(q.fig)) errs.push(`${where}: ${e}`);  // figures.js
   });
   return errs;
 }

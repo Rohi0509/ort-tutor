@@ -248,6 +248,25 @@ button.card:active { transform: translateY(1px); }
 .sticky-go { position: sticky; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
 .sticky-go .btn { width: 100%; }
 
+/* ---------- figures (js/figures.js) ---------- */
+.fig { margin: 0; display: flex; justify-content: center; color: var(--ink); }
+.fig svg { width: 100%; height: auto; overflow: visible; }
+.fig svg line, .fig svg polygon, .fig svg circle, .fig svg path { stroke: currentColor; stroke-width: 1.6; fill: none; vector-effect: non-scaling-stroke; }
+.fig svg .grid { stroke: var(--line); stroke-width: 1; }
+.fig svg .arc { stroke: var(--accent); stroke-width: 1.6; }
+.fig svg .curve { stroke: var(--accent); stroke-width: 2.2; }
+.fig svg .mark { stroke-width: 2.2; }
+.fig svg .dot { fill: currentColor; stroke: none; }
+.fig svg .head { fill: currentColor; stroke: none; }
+/* A thin halo in the card colour keeps labels readable where a line passes behind them. */
+.fig svg text { fill: currentColor; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; paint-order: stroke; font: 600 13px var(--f-body); }
+.fig svg text.v { font-family: Georgia, "Times New Roman", serif; font-style: italic; font-size: 15px; }
+.fig svg text.n { font: 500 10px var(--f-mono); fill: var(--muted); }
+.fig svg text.lab { font-size: 12px; }
+.figtable { border-collapse: collapse; margin: 0 auto; font-variant-numeric: tabular-nums; }
+.figtable th, .figtable td { border: 1.5px solid var(--line); padding: 6px 14px; text-align: center; }
+.figtable th { background: var(--bg); font-size: .85rem; }
+
 /* ---------- results ---------- */
 .result { text-align: center; display: grid; gap: 8px; justify-items: center; background: var(--surface); border: 2px solid var(--ink); border-radius: var(--r); padding: 22px 18px; }
 .stars { font-size: 2.4rem; letter-spacing: .1em; }
