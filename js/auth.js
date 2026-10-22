@@ -12,7 +12,9 @@ const Cloud = (() => {
   const enabled = !testMode && !!(window.supabase && set(cfg.SUPABASE_URL) && set(cfg.SUPABASE_ANON_KEY));
   const sb = enabled
     ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
-      auth: { flowType: "pkce", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      // "implicit": email links (reset, confirm) carry the session themselves, so they work on any device with
+      // Supabase's default email templates. "pkce" links only work in the browser that asked for them.
+      auth: { flowType: "implicit", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
     })
     : null;
 
@@ -72,9 +74,9 @@ const Cloud = (() => {
   C.resetPassword = async email => { must(await sb.auth.resetPasswordForEmail(email, { redirectTo: here() })); };
   C.updatePassword = async password => { must(await sb.auth.updateUser({ password })); };
 
-  // Email links. The Supabase email templates send ?token_hash=…&type=recovery|email (see CLAUDE.md), which works
-  // on any device. The default PKCE link (?code=…) only works in the browser that asked for it, so a reset opened
-  // on a phone or in the Gmail app used to land silently on the login page.
+  // Email links. With the default templates a link returns with #access_token=…&type=recovery, which supabase-js
+  // reads by itself (PASSWORD_RECOVERY event). Custom templates (they need custom SMTP) may instead send
+  // ?token_hash=…&type=recovery|email, verified here. Either works on any device; a failed link shows a message.
   C.authLink = () => {
     const q = new URLSearchParams(loc.search || ""), h = new URLSearchParams((loc.hash || "").replace(/^#/, ""));
     return { token: q.get("token_hash"), type: q.get("type"), err: q.get("error_description") || h.get("error_description"), hadCode: q.has("code") };

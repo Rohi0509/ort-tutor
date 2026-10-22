@@ -319,6 +319,12 @@ async function logOut() { click('#tabbar [data-tab="settings"]:not([hidden])'); 
     document.querySelector('.topbar [data-lang="en"]').click();
     await logOut(); await logIn("kid@test.com", "secret123");
 
+    // Password reset with the default email: Supabase signs the student in from the link and sends PASSWORD_RECOVERY
+    current = DB.users[0]; listener("PASSWORD_RECOVERY", { user: current }); await wait(200);
+    ok(view.name === "newpw", "default reset email opens 'choose a new password'");
+    fill("password", "secret123"); submit(); await wait(200);
+    ok(view.name === "home" && /Password changed/.test(flashText()), "password changed from the default reset email");
+
     // Password reset link opened on another device: a one-time token, not tied to the browser that asked
     handleAuthLink({ token: "good-token", type: "recovery" }); await wait(200);
     ok(view.name === "newpw", "reset link opens 'choose a new password'");
