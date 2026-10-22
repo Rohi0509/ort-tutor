@@ -356,6 +356,11 @@ Object.assign(UI.ky, { ruKyOnly: "Орус жана кыргыз тилинде"
   paidProblems: n => `Жүктөөдөн мурун оңдоңуз (көйгөй: ${n}):`, paidReady: (q, p) => `Суроо: ${q}, текст: ${p}. Баары туура.`,
   paidUpload: "Жүктөө", paidDone: (q, p) => `Жүктөлдү: ${q} суроо, ${p} текст.` });
 
+/* Rule and solution after an answer. */
+Object.assign(UI.en, { ruleL: "Rule", solutionL: "Solution" });
+Object.assign(UI.ru, { ruleL: "Правило", solutionL: "Решение" });
+Object.assign(UI.ky, { ruleL: "Эреже", solutionL: "Чыгарылышы" });
+
 const CMP_OPTS = {
   en: ["The quantity in Column А is greater", "The quantity in Column Б is greater", "The quantities are equal", "Not enough information to decide"],
   ru: ["Величина в колонке А больше", "Величина в колонке Б больше", "Величины равны", "Информации недостаточно"],

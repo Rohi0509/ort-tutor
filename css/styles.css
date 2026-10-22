@@ -243,6 +243,13 @@ button.card:active { transform: translateY(1px); }
 .fb b { font-family: var(--f-display); font-size: 1.1rem; }
 .fb.ok b { color: var(--good); }
 .fb.no b { color: var(--bad); }
+.rulebox { margin: 10px 0 8px; padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1.5px solid var(--accent); }
+.fb .rulebox b, .fb .rulebox summary { font-family: var(--f-body); font-size: .9rem; font-weight: 800; color: var(--accent); }
+.fb.no .sol, .fb.ok .sol { color: var(--ink); }
+.rulebox summary { cursor: pointer; }
+.rulebox p { margin-top: 4px; color: var(--ink); }
+.fb .sol { font-family: var(--f-body); font-size: .95rem; color: var(--ink); }
+.review .rule { margin-top: 2px; color: var(--accent); font-weight: 700; }
 .gain { display: inline-block; margin-left: 6px; padding: 2px 9px; border-radius: 999px; background: var(--gold); color: #1d1500; font: 800 .85rem var(--f-body); animation: pop .4s ease-out; }
 @keyframes pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.15); } }
 .sticky-go { position: sticky; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }

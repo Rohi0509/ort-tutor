@@ -315,7 +315,10 @@ function viewQuiz() {
   }).join("");
   const ok = answered && chosen === q.ans;
   const gain = quiz.gain[i] ? `<span class="gain">${esc(T().xpGained(quiz.gain[i]))}</span>` : "";
-  const fb = answered ? `<div class="fb ${ok ? "ok" : "no"}" role="status"><b>${ok ? "✓ " + esc(T().correct) : "✗ " + esc(T().wrong) + " " + LETTERS[q.ans] + "."}</b>${gain}<p>${tx(q.why)}</p></div>` : "";
+  // After a wrong answer the child sees the rule first, then this question's solution, so they can solve the next
+  // one too. After a right answer the rule stays folded away.
+  const rule = q.rule ? (ok ? `<details class="rulebox"><summary>📘 ${esc(T().ruleL)}</summary><p>${tx(q.rule)}</p></details>` : `<div class="rulebox"><b>📘 ${esc(T().ruleL)}</b><p>${tx(q.rule)}</p></div>`) : "";
+  const fb = answered ? `<div class="fb ${ok ? "ok" : "no"}" role="status"><b>${ok ? "✓ " + esc(T().correct) : "✗ " + esc(T().wrong) + " " + LETTERS[q.ans] + "."}</b>${gain}${ok ? "" : rule}<p>${q.rule && !ok ? `<b class="sol">✏️ ${esc(T().solutionL)}:</b> ` : ""}${tx(q.why)}</p>${ok ? rule : ""}</div>` : "";
   const last = i === items.length - 1;
   const btn = timed
     ? `<button type="button" class="btn primary" data-act="tnext">${esc(last ? T().finishNow : picked === undefined ? T().skip : T().next)}</button>`
@@ -354,7 +357,7 @@ function viewResults() {
       ? `${it.q.cond ? pick(it.q.cond) + ". " : ""}${T().colA}: ${pick(it.q.a)} · ${T().colB}: ${pick(it.q.b)}`
       : pick(it.q.stem);
     const miss = answers[k] === undefined ? `${T().noAnswer} ` : "";
-    return `<li><span class="m ${ok ? "ok" : "no"}">${ok ? "✓" : "✗"}</span><div><p>${esc(head)}</p><p class="why">${ok ? "" : `${esc(miss)}${esc(T().wrong)} ${LETTERS[it.q.ans]}. `}${tx(it.q.why)}</p></div></li>`;
+    return `<li><span class="m ${ok ? "ok" : "no"}">${ok ? "✓" : "✗"}</span><div><p>${esc(head)}</p>${!ok && it.q.rule ? `<p class="rule">📘 ${tx(it.q.rule)}</p>` : ""}<p class="why">${ok ? "" : `${esc(miss)}${esc(T().wrong)} ${LETTERS[it.q.ans]}. `}${tx(it.q.why)}</p></div></li>`;
   }).join("");
   const ts = topicsOf(sub);
   const idx = topicId ? ts.findIndex(t => t.id === topicId) : -1;

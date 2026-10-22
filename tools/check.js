@@ -39,6 +39,8 @@ for (const l of ["en", "ru", "ky"]) {
         // As on the real ORT: maths part II has 5 options (А–Д); comparisons and every other section have 4 (А–Г).
         const o = optsOf(it.q), need = it.q.kind === "mc" && sub.id === "math" ? 5 : 4;
         if (!Array.isArray(o) || o.length !== need || it.q.ans < 0 || it.q.ans >= need) { bad++; console.log("Bad options:", l, t.id, "question", i + 1); }
+        // Every question teaches its rule after a wrong answer (shown before the solution).
+        if (!it.q.rule || !pick(it.q.rule)) { bad++; console.log("No rule:", l, t.id, "question", i + 1); }
       });
       quiz = { mode: "practice", subjectId: sub.id, topicId: t.id, items, i: 0, answers: [], gain: [10], combo: 3, xp: 0 };
       for (let i = 0; i < items.length; i++) { quiz.i = i; quiz.answers[i] = (items[i].q.ans + 1) % 2; view = { name: "quiz" }; render(); chk(els.app.innerHTML, l + " " + t.id + " question " + (i + 1)); }

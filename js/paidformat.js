@@ -39,6 +39,7 @@ function validatePaid(bundle, subjects) {
     if (q.level !== 2 && q.level !== 3) errs.push(`${where}: level must be 2 or 3`);
     if (!["ru", "ky"].includes(q.lang)) errs.push(`${where}: lang must be "ru" or "ky"`);
     if (!str(q.why)) errs.push(`${where}: needs an explanation ("why")`);
+    if (q.rule !== undefined && !str(q.rule)) errs.push(`${where}: "rule" must be text (the general rule shown after a wrong answer)`);
     if (q.kind === "cmp") {
       if (sub && sub !== "math") errs.push(`${where}: comparisons belong to maths topics`);
       if (!str(q.a) || !str(q.b)) errs.push(`${where}: a comparison needs "a" and "b"`);
