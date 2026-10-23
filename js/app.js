@@ -298,10 +298,18 @@ function questionBody(q) {
   if (q.kind === "cmp") return `${figHtml(q.fig)}${q.cond ? `<p class="cond">${tx(q.cond)}</p>` : ""}${cmpBox(q.a, q.b)}`;
   return `${figHtml(q.fig)}<p class="stem">${tx(q.stem)}</p>`;
 }
-// The reading text for a question: its own passage (paid levels) or the topic's.
+// The reading text for a question: its own passage (paid levels) or the topic's. Paid texts number their paragraphs
+// (questions refer to them, as the real test refers to line numbers); a paragraph starting "## " is an unnumbered
+// heading, such as "Отрывок I".
 function passageHtml(q, topic) {
   const p = q.passage ? PAID.passages[q.passage] : null;
-  if (p) return `<div class="passage">${p.title ? `<b>${esc(p.title)}</b>` : ""}${p.text.split(/\n\s*\n/).map(x => `<p>${esc(x.trim())}</p>`).join("")}</div>`;
+  if (p) {
+    let n = 0;
+    const body = p.text.split(/\n\s*\n/).map(x => x.trim()).map(x => x.startsWith("## ")
+      ? `<h4>${esc(x.slice(3))}</h4>`
+      : `<p><span class="pn">${++n}</span>${esc(x)}</p>`).join("");
+    return `<div class="passage">${p.title ? `<b>${esc(p.title)}</b>` : ""}${body}</div>`;
+  }
   return topic.passage ? `<div class="passage">${tx(topic.passage)}</div>` : "";
 }
 const optsOf = q => q.kind === "cmp" ? CMP_OPTS[L()] : isObj(q.opts) ? q.opts[L()] : q.opts.map(o => pick(o));
